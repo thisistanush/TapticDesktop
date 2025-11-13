@@ -5,51 +5,54 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
-public class BroadcastListener implements Closeable {
+public class BroadcastListener implements Closeable, Runnable {
     private final int port;
-    private Thread thread;
-    private volatile boolean running;
+    private volatile boolean running = true;
     private DatagramSocket socket;
-
-    public interface Handler {
-        void onMessage(String jsonText);
-    }
 
     public BroadcastListener(int port) {
         this.port = port;
     }
 
-    /** Starts a background thread; no while-loop in main. */
-    public void start(Handler handler) throws SocketException {
-        if (running) return;
-        running = true;
+    @Override
+    public void run(){
+        try {
+            start();
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void start() throws SocketException {
         socket = new DatagramSocket(port);
         socket.setReuseAddress(true);
-        thread = new Thread(() -> {
-            byte[] buf = new byte[2048];
-            while (running) {
-                try {
-                    DatagramPacket pkt = new DatagramPacket(buf, buf.length);
-                    socket.receive(pkt);
-                    String text = new String(pkt.getData(), pkt.getOffset(), pkt.getLength(), StandardCharsets.UTF_8);
-                    handler.onMessage(text);
-                } catch (IOException e) {
-                    if (running) {
-                        System.err.println("[Listener] " + e.getMessage());
-                    }
+        byte[] buf = new byte[2048];
+
+        while (running) {
+            try {
+                DatagramPacket pkt = new DatagramPacket(buf, buf.length);
+                socket.receive(pkt);
+                String text = new String(pkt.getData(), pkt.getOffset(), pkt.getLength(), StandardCharsets.UTF_8);
+                System.out.println("*********************************************");
+                System.out.println(text);
+                System.out.println("*********************************************");
+            } catch (IOException e) {
+                if (running) {
+                    System.err.println("[Listener] " + e.getMessage());
                 }
             }
-        }, "BroadcastListener");
-        thread.setDaemon(true);
-        thread.start();
+        }
+    }
+
+    public void stopListening(){
+        running = false;
     }
 
     @Override
     public void close() {
         running = false;
-        if (socket != null) socket.close();
-        if (thread != null) {
-            try { thread.join(500); } catch (InterruptedException ignored) {}
+        if (socket != null){
+            socket.close();
         }
     }
 }

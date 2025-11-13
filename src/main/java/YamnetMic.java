@@ -13,8 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class YamnetMic implements AutoCloseable {
+public class YamnetMic implements AutoCloseable, Runnable {
 
+    public volatile boolean running = true;
     private static final int SR = 16000;
     private static final int WIN_SAMPLES = 15600;
     private static final int HOP_SAMPLES = 7800;
@@ -23,27 +24,28 @@ public class YamnetMic implements AutoCloseable {
     private final TfLiteModel model;
     private final TfLiteInterpreterOptions options;
     private final TfLiteInterpreter interpreter;
-    private final List<String> labels;
+    private static final String[] labels = loadLabels("/models/yamnet_class_map.csv");
+    private static int b1 = 0, b2 = 0, b3 = 0;
+    private static double[] doubleScores = new double[3];
+
+    public void stopListening(){
+        running = false;
+    }
 
     public YamnetMic() throws Exception {
         File modelFile = extractResource("/models/lite-model_yamnet_classification_tflite_1.tflite", "yamnet.tflite");
 
         model = tensorflowlite.TfLiteModelCreateFromFile(modelFile.getAbsolutePath());
-
         options = tensorflowlite.TfLiteInterpreterOptionsCreate();
         tensorflowlite.TfLiteInterpreterOptionsSetNumThreads(options, 8);
-
         interpreter = tensorflowlite.TfLiteInterpreterCreate(model, options);
 
-        int[] dims = { WIN_SAMPLES };
+        int[] dims = {WIN_SAMPLES};
         tensorflowlite.TfLiteInterpreterResizeInputTensor(interpreter, 0, dims, dims.length);
         tensorflowlite.TfLiteInterpreterAllocateTensors(interpreter);
-
-        labels = loadLabels("/models/yamnet_class_map.csv");
     }
 
     public void listenLoop() throws Exception {
-
         AudioFormat fmt = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, SR, 16, 1, 2, SR, false);
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, fmt);
 
@@ -55,7 +57,7 @@ public class YamnetMic implements AutoCloseable {
         float[] ring = new float[WIN_SAMPLES];
         int fill = 0;
 
-        while (true) {
+        while (running) {
             readFully(line, hopBytes);
             ByteBuffer bb = ByteBuffer.wrap(hopBytes).order(ByteOrder.LITTLE_ENDIAN);
             for (int i = 0; i < HOP_SAMPLES; i++) {
@@ -68,10 +70,14 @@ public class YamnetMic implements AutoCloseable {
                     ring[WIN_SAMPLES - HOP_SAMPLES + i] = v;
                 }
             }
-            if (fill < WIN_SAMPLES) continue;
+            if (fill < WIN_SAMPLES){
+                continue;
+            }
 
             float[] scores = infer(ring);
-            printTop3(scores, labels);
+            printTop3(scores);
+
+            Interpreter.sendData(doubleScores, labels[b1], labels[b2], labels[b3]);
         }
     }
 
@@ -95,36 +101,39 @@ public class YamnetMic implements AutoCloseable {
         int off = 0, need = buf.length;
         while (off < need) {
             int n = line.read(buf, off, need - off);
-            if (n < 0) throw new EOFException("mic closed");
             off += n;
         }
     }
 
-    private static void printTop3(float[] scores, List<String> labels) {
-        int b1 = 0, b2 = 0, b3 = 0;
+    private static void printTop3(float[] scores) {
         for (int i = 1; i < scores.length; i++) {
-            if (scores[i] > scores[b1]) { b3 = b2; b2 = b1; b1 = i; }
-            else if (scores[i] > scores[b2]) { b3 = b2; b2 = i; }
-            else if (scores[i] > scores[b3]) { b3 = i; }
+            if (scores[i] > scores[b1]) {
+                doubleScores[0] = ((double)scores[i]);
+                b3 = b2;
+                b2 = b1;
+                b1 = i;
+            } else if (scores[i] > scores[b2]) {
+                doubleScores[1] = ((double)scores[i]);
+                b3 = b2;
+                b2 = i;
+            } else if (scores[i] > scores[b3]) {
+                doubleScores[2] = ((double)scores[i]);
+                b3 = i;
+            }
         }
         System.out.printf("Top: %s=%.3f  %s=%.3f  %s=%.3f%n",
-                lab(labels, b1), scores[b1],
-                lab(labels, b2), scores[b2],
-                lab(labels, b3), scores[b3]);
+                labels[b1], scores[b1],
+                labels[b2], scores[b2],
+                labels[b3], scores[b3]);
     }
-
-    private static String lab(List<String> labels, int idx) {
-        return (labels != null && idx >= 0 && idx < labels.size()) ? labels.get(idx) : ("class_" + idx);
-    }
-
-    private static List<String> loadLabels(String res) {
+    private static String[] loadLabels(String res) {
         try (InputStream reader = YamnetMic.class.getResourceAsStream(res)) {
             if (reader == null){
                 return null;
             }
 
             BufferedReader br = new BufferedReader(new InputStreamReader(reader, StandardCharsets.UTF_8));
-            List<String> out = new ArrayList<>(NUM_CLASSES);
+            List<String> outList = new ArrayList<>(NUM_CLASSES); // Use List temporarily
 
             String line;
             boolean header = true;
@@ -134,9 +143,11 @@ public class YamnetMic implements AutoCloseable {
                     continue;
                 }
                 String[] p = line.split(",", 3);
-                if (p.length == 3) out.add(p[2].trim());
+                if (p.length == 3) outList.add(p[2].trim());
             }
-            return out;
+
+            // Convert the List back to a String array for the final return
+            return outList.toArray(new String[0]);
 
         } catch (IOException e) {
             return null;
@@ -145,13 +156,13 @@ public class YamnetMic implements AutoCloseable {
 
     private static File extractResource(String res, String name) throws IOException {
         try (InputStream in = YamnetMic.class.getResourceAsStream(res)) {
-            if (in == null) throw new FileNotFoundException("Missing resource: " + res);
             File tmp = File.createTempFile(name, ".tflite");
             try (OutputStream out = new FileOutputStream(tmp)) {
                 byte[] buf = new byte[8192];
                 int r; long total = 0;
-                while ((r = in.read(buf)) != -1) { out.write(buf, 0, r); total += r; }
-                if (total < 1024) throw new IOException("Model too small: " + total + " bytes");
+                while ((r = in.read(buf)) != -1) {
+                    out.write(buf, 0, r); total += r;
+                }
             }
             tmp.deleteOnExit();
             return tmp;
@@ -163,5 +174,14 @@ public class YamnetMic implements AutoCloseable {
         tensorflowlite.TfLiteInterpreterDelete(interpreter);
         tensorflowlite.TfLiteInterpreterOptionsDelete(options);
         tensorflowlite.TfLiteModelDelete(model);
+    }
+
+    @Override
+    public void run(){
+        try {
+            this.listenLoop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -7,21 +7,18 @@ import java.util.Enumeration;
 
 public final class BroadcastSender {
 
-    private BroadcastSender() {
+    private static int port;
 
+    public BroadcastSender(int port) {
+        this.port = port;
     }
-
-    public static void sendFire(int port) throws IOException {
-        JSONObject json = new JSONObject()
-                .put("type", "fire")
-                .put("ts", System.currentTimeMillis())
-                .put("host", getHostName());
+    public static void sendEvent(String event) throws IOException {
+        JSONObject json = new JSONObject().put("type", event).put("ts", System.currentTimeMillis()).put("host", getHostName());
 
         byte[] payload = json.toString().getBytes(StandardCharsets.UTF_8);
         try (DatagramSocket sock = new DatagramSocket()) {
             sock.setBroadcast(true);
-            DatagramPacket p = new DatagramPacket(payload, payload.length,
-                    InetAddress.getByName("255.255.255.255"), port);
+            DatagramPacket p = new DatagramPacket(payload, payload.length, InetAddress.getByName("255.255.255.255"), port);
             sock.send(p);
         }
     }
