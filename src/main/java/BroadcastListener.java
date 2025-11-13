@@ -2,6 +2,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
@@ -33,9 +34,14 @@ public class BroadcastListener implements Closeable, Runnable {
                 DatagramPacket pkt = new DatagramPacket(buf, buf.length);
                 socket.receive(pkt);
                 String text = new String(pkt.getData(), pkt.getOffset(), pkt.getLength(), StandardCharsets.UTF_8);
-                System.out.println("*********************************************");
-                System.out.println(text);
-                System.out.println("*********************************************");
+                if(text.indexOf(getHostName()) >= 0){
+                    continue;
+                }else{
+                    System.out.println("*********************************************");
+                    System.out.println(text);
+                    System.out.println("*********************************************");
+                }
+
             } catch (IOException e) {
                 if (running) {
                     System.err.println("[Listener] " + e.getMessage());
@@ -53,6 +59,14 @@ public class BroadcastListener implements Closeable, Runnable {
         running = false;
         if (socket != null){
             socket.close();
+        }
+    }
+
+    private static String getHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "unknown";
         }
     }
 }
