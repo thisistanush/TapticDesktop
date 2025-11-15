@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="rootPane" stylesheets="@taptic.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="MainViewController">
+
+    <!-- Top title bar -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header-bar">
+            <padding>
+                <Insets bottom="8" left="12" right="12" top="8" />
+            </padding>
+            <Label styleClass="header-title" text="Taptic Desktop" />
+
+            <Pane HBox.hgrow="ALWAYS" />
+
+            <Button fx:id="settingsButton" focusTraversable="false" onAction="#onSettingsClicked" styleClass="header-button" text="⚙ Settings">
+                <tooltip>
+                    <Tooltip text="Network + notification settings" />
+                </tooltip>
+            </Button>
+        </HBox>
+    </top>
+
+    <!-- Center: listening indicator + top 3 sounds -->
+    <center>
+        <VBox alignment="CENTER" spacing="24">
+            <padding>
+                <Insets bottom="10" left="20" right="20" top="30" />
+            </padding>
+
+            <!-- Status (network / detection messages) -->
+            <Label fx:id="statusLabel" styleClass="status-label" />
+
+            <!-- Big “now” sound -->
+            <VBox alignment="CENTER" spacing="6">
+                <Label styleClass="now-caption" text="Now hearing" />
+                <Label fx:id="nowLabel" styleClass="now-label" text="-" />
+            </VBox>
+
+            <!-- Top 3 prediction rows -->
+            <VBox maxWidth="480" spacing="10" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label styleClass="rank-label-1" text="1." />
+                    <Label fx:id="top1Label" prefWidth="260" text="-" />
+                    <ProgressBar fx:id="top1Bar" prefWidth="160" progress="0.0" styleClass="top1-bar" />
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label styleClass="rank-label-2" text="2." />
+                    <Label fx:id="top2Label" prefWidth="260" text="-" />
+                    <ProgressBar fx:id="top2Bar" prefWidth="160" progress="0.0" styleClass="top2-bar" />
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <Label styleClass="rank-label-3" text="3." />
+                    <Label fx:id="top3Label" prefWidth="260" text="-" />
+                    <ProgressBar fx:id="top3Bar" prefWidth="160" progress="0.0" styleClass="top3-bar" />
+                </HBox>
+            </VBox>
+        </VBox>
+    </center>
+
+    <!-- Bottom monitored / notify area -->
+    <bottom>
+        <TitledPane expanded="false" text="What should Taptic listen and alert for?">
+            <content>
+                <VBox spacing="8">
+                    <padding>
+                        <Insets bottom="10" left="10" right="10" top="8" />
+                    </padding>
+
+                    <Label styleClass="settings-help" text="Choose which sounds Taptic pays attention to (Monitored) and which of those should trigger notifications (Notify)." wrapText="true" />
+
+                    <TabPane fx:id="optionsTabPane" tabClosingPolicy="UNAVAILABLE">
+                        <tabs>
+                            <!-- Tab 1: which sounds to actually monitor -->
+                            <Tab text="Monitored">
+                                <content>
+                                    <ScrollPane fitToWidth="true" prefHeight="160.0">
+                                        <content>
+                                            <VBox fx:id="monitoredBox" spacing="6">
+                                                <padding>
+                                                    <Insets bottom="10" left="10" right="10" top="10" />
+                                                </padding>
+                                            </VBox>
+                                        </content>
+                                    </ScrollPane>
+                                </content>
+                            </Tab>
+
+                            <!-- Tab 2: which monitored sounds should trigger notifications -->
+                            <Tab text="Notify">
+                                <content>
+                                    <ScrollPane fitToWidth="true" prefHeight="160.0">
+                                        <content>
+                                            <VBox fx:id="notifyBox" spacing="6">
+                                                <padding>
+                                                    <Insets bottom="10" left="10" right="10" top="10" />
+                                                </padding>
+                                            </VBox>
+                                        </content>
+                                    </ScrollPane>
+                                </content>
+                            </Tab>
+                        </tabs>
+                    </TabPane>
+                </VBox>
+            </content>
+        </TitledPane>
+    </bottom>
+</BorderPane>

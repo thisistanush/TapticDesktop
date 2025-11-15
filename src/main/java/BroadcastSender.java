@@ -1,24 +1,35 @@
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public final class BroadcastSender {
 
-    private static int port;
+    private final int port;
+    private static final DateTimeFormatter TIME_FMT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public BroadcastSender(int port) {
         this.port = port;
     }
-    public static void sendEvent(String event) throws IOException {
-        JSONObject json = new JSONObject().put("type", event).put("ts", System.currentTimeMillis()).put("host", getHostName());
+
+    public void sendEvent(String eventLabel) throws IOException {
+        JSONObject json = new JSONObject()
+                .put("type", eventLabel)
+                .put("time", LocalDateTime.now().format(TIME_FMT))
+                .put("host", getHostName());
 
         byte[] payload = json.toString().getBytes(StandardCharsets.UTF_8);
         try (DatagramSocket sock = new DatagramSocket()) {
             sock.setBroadcast(true);
-            DatagramPacket p = new DatagramPacket(payload, payload.length, InetAddress.getByName("255.255.255.255"), port);
+            DatagramPacket p = new DatagramPacket(
+                    payload, payload.length,
+                    InetAddress.getByName("255.255.255.255"), port);
             sock.send(p);
         }
     }

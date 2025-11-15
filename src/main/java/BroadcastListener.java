@@ -7,6 +7,7 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
 public class BroadcastListener implements Closeable, Runnable {
+
     private final int port;
     private volatile boolean running = true;
     private DatagramSocket socket;
@@ -16,7 +17,7 @@ public class BroadcastListener implements Closeable, Runnable {
     }
 
     @Override
-    public void run(){
+    public void run() {
         try {
             start();
         } catch (SocketException e) {
@@ -33,14 +34,20 @@ public class BroadcastListener implements Closeable, Runnable {
             try {
                 DatagramPacket pkt = new DatagramPacket(buf, buf.length);
                 socket.receive(pkt);
-                String text = new String(pkt.getData(), pkt.getOffset(), pkt.getLength(), StandardCharsets.UTF_8);
-                if(text.indexOf(getHostName()) >= 0){
+                String text = new String(
+                        pkt.getData(),
+                        pkt.getOffset(),
+                        pkt.getLength(),
+                        StandardCharsets.UTF_8
+                );
+
+                // ignore messages this host emitted
+                if (text.indexOf(getHostName()) >= 0) {
                     continue;
-                }else{
-                    System.out.println("*********************************************");
-                    System.out.println(text);
-                    System.out.println("*********************************************");
                 }
+
+                // hand off to Interpreter so it can update UI / notifications
+                Interpreter.handleBroadcastJson(text);
 
             } catch (IOException e) {
                 if (running) {
@@ -50,14 +57,14 @@ public class BroadcastListener implements Closeable, Runnable {
         }
     }
 
-    public void stopListening(){
+    public void stopListening() {
         running = false;
     }
 
     @Override
     public void close() {
         running = false;
-        if (socket != null){
+        if (socket != null) {
             socket.close();
         }
     }
