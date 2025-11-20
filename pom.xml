@@ -43,11 +43,10 @@
             <version>${javafx.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.vosk</groupId>
+            <groupId>com.alphacephei</groupId>
             <artifactId>vosk</artifactId>
-            <version>0.3.45</version>
+            <version>0.3.33</version>
         </dependency>
-
     </dependencies>
 
     <build>

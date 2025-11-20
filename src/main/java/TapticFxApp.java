@@ -2,7 +2,10 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.IOException;
 import java.net.URL;
@@ -17,6 +20,8 @@ public class TapticFxApp extends Application {
 
     private MainViewController mainController;
     private SettingsController settingsController;
+    private Stage bubbleStage;
+    private Label bubbleLabel;
 
     private YamnetMic yamnetMic;
     private BroadcastListener broadcastListener;
@@ -66,6 +71,16 @@ public class TapticFxApp extends Application {
         stage.setMinWidth(800);
         stage.setMinHeight(500);
         stage.show();
+
+        // Floating bubble when minimized
+        setupBubbleStage();
+        stage.iconifiedProperty().addListener((obs, old, iconified) -> {
+            if (iconified) {
+                showBubble();
+            } else {
+                hideBubble();
+            }
+        });
 
         // ----- AUDIO + NETWORK -----
         startAudioAndNetwork();
@@ -163,6 +178,10 @@ public class TapticFxApp extends Application {
                 settingsScene = new Scene(settingsRoot, 900, 600);
                 applyCss(settingsScene);
 
+                if (settingsController != null) {
+                    settingsController.initWithLabels(YamnetMic.getLabels());
+                }
+
             } catch (IOException e) {
                 throw new RuntimeException("Failed to load SettingsView FXML", e);
             }
@@ -177,9 +196,11 @@ public class TapticFxApp extends Application {
         }
     }
 
-    // Bubble text hook (for future floating popup UI)
+    // Bubble text hook (for floating popup UI)
     public void updateBubbleText(String text) {
-        // Implement floating bubble UI later if you want
+        if (bubbleLabel != null) {
+            bubbleLabel.setText(text == null ? "-" : text);
+        }
     }
 
     public Stage getPrimaryStage() {
@@ -202,9 +223,49 @@ public class TapticFxApp extends Application {
             broadcastListener.stopListening();
             broadcastListener.close();
         }
+        hideBubble();
     }
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void setupBubbleStage() {
+        bubbleLabel = new Label("-");
+        bubbleLabel.setStyle("-fx-background-color: rgba(37,31,76,0.92);"
+                + "-fx-text-fill: white;"
+                + "-fx-padding: 8 12 8 12;"
+                + "-fx-background-radius: 12;"
+                + "-fx-font-size: 15;"
+                + "-fx-font-weight: bold;"
+                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 14, 0.3, 0, 3);");
+
+        StackPane root = new StackPane(bubbleLabel);
+        root.setStyle("-fx-background-color: transparent;");
+
+        bubbleStage = new Stage(StageStyle.TRANSPARENT);
+        bubbleStage.setAlwaysOnTop(true);
+        Scene scene = new Scene(root);
+        scene.setFill(null);
+        bubbleStage.setScene(scene);
+        bubbleStage.setWidth(240);
+        bubbleStage.setHeight(80);
+        hideBubble();
+    }
+
+    private void showBubble() {
+        if (bubbleStage != null && !bubbleStage.isShowing()) {
+            if (primaryStage != null) {
+                bubbleStage.setX(primaryStage.getX() + Math.max(0, primaryStage.getWidth() - 260));
+                bubbleStage.setY(primaryStage.getY() + 40);
+            }
+            bubbleStage.show();
+        }
+    }
+
+    private void hideBubble() {
+        if (bubbleStage != null && bubbleStage.isShowing()) {
+            bubbleStage.hide();
+        }
     }
 }

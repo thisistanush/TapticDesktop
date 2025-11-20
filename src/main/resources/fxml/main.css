@@ -1,14 +1,14 @@
 /* Global app look -------------------------------------------------------- */
 
 .root {
-    -fx-font-family: "SF Pro Text", "Helvetica Neue", Arial;
-    -fx-background-color: #050814;         /* deep dark */
+    -fx-font-family: "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial;
+    -fx-background-color: radial-gradient(radius 120%, #0C1024, #050814);
     -fx-text-fill: #ECEFF4;
 }
 
 /* The main BorderPane in both screens */
 #rootPane {
-    -fx-background-color: #050814;
+    -fx-background-color: transparent;
 }
 
 /* Generic labels */
@@ -16,42 +16,52 @@
     -fx-font-smoothing-type: lcd;
     -fx-text-fill: #E5E9F0;
 }
+.mic-warning {
+    -fx-background-color: rgba(255,193,7,0.18);
+    -fx-text-fill: #FDD835;
+    -fx-padding: 4 8 4 8;
+    -fx-background-radius: 8;
+    -fx-font-size: 12;
+}
 
 /* Header bar ------------------------------------------------------------- */
 
 .header-bar {
-    -fx-background-color: linear-gradient(to right, #251C5C, #4726B5);
-    -fx-border-color: #1A1639;
+    -fx-background-color: linear-gradient(to right, #1B1D3A, #2E2D63, #3E2A72);
+    -fx-border-color: #17192F;
     -fx-border-width: 0 0 1 0;
 }
 
 .header-title {
-    -fx-font-size: 20;
+    -fx-font-size: 22;
     -fx-font-weight: bold;
     -fx-text-fill: #FFFFFF;
 }
 
 .header-button {
-    -fx-background-color: transparent;
+    -fx-background-color: rgba(255,255,255,0.06);
     -fx-text-fill: #E0E3FF;
     -fx-font-size: 13;
+    -fx-background-radius: 10;
+    -fx-padding: 6 10 6 10;
 }
 
 /* Status + "now hearing" ------------------------------------------------- */
 
 .status-label {
-    -fx-font-size: 14;
+    -fx-font-size: 15;
     -fx-text-fill: #8AB4FF;
 }
 
 .now-caption {
-    -fx-font-size: 14;
-    -fx-text-fill: #A0A4B8;
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #C6D0FF;
 }
 
 .now-label {
-    -fx-font-size: 28;
-    -fx-font-weight: bold;
+    -fx-font-size: 38;
+    -fx-font-weight: 800;
     -fx-text-fill: #FFFFFF;
 }
 
@@ -74,6 +84,10 @@
 .progress-bar {
     -fx-background-radius: 999;
     -fx-padding: 3 0 3 0;
+}
+
+.level-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #20C997, #87F3FF);
 }
 
 /* Track */
@@ -206,4 +220,18 @@
     -fx-background-color: #252744;
     -fx-text-fill: #ECEFF4;
     -fx-font-size: 11;
+}
+
+.history-drawer {
+    -fx-background-color: linear-gradient(to bottom, #0D1124, #0A0E1C);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 18, 0.35, 0, 8);
+    -fx-border-color: #2A2E45;
+    -fx-border-width: 0 0 0 1;
+    -fx-background-radius: 12 0 0 12;
+}
+
+.history-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E0E6FF;
 }

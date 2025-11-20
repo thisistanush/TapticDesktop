@@ -178,6 +178,9 @@ public class SettingsController {
                         "Color used when this sound triggers a notification."
                 ));
 
+                // Seed the map with the default color so it sticks immediately
+                AppConfig.setNotificationColor(label, AppConfig.getNotificationColor(label));
+
                 picker.valueProperty().addListener((obs, old, val) -> {
                     if (val != null) {
                         String cssColor = toCssColor(val);

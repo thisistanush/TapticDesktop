@@ -1,5 +1,8 @@
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -8,11 +11,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
-import org.vosk.Model;
-import org.vosk.Recognizer;
 
 import javax.sound.sampled.*;
 import java.util.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.function.Consumer;
 
 public class MainViewController {
 
@@ -38,26 +42,38 @@ public class MainViewController {
 
     // History sidebar
     @FXML private ListView<String> historyList;
+    @FXML private ToggleButton historyToggle;
+    @FXML private VBox historyDrawer;
+    private TranslateTransition historyTransition;
 
     // Caption tab (chat-like)
     @FXML private ListView<CaptionMessage> captionList;
     @FXML private TextField captionInputField;
     @FXML private ToggleButton captionMicToggle;
 
+    @FXML private Label micWarningLabel;
+
     private final Map<String, CheckBox> monitoredMap = new HashMap<>();
     private final Map<String, CheckBox> notifyMap = new HashMap<>();
+    private final Map<ProgressBar, Timeline> progressAnimations = new HashMap<>();
 
     private Timeline flashTimeline;
 
-    // STT state
-    private Thread sttThread;
-    private volatile boolean sttRunning = false;
-    private TargetDataLine sttLine;
+    // STT service (Google Cloud Speech)
+    private SttService sttService;
+
+    private static final DateTimeFormatter TIME_FMT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @FXML
     private void initialize() {
         if (statusLabel != null) {
             statusLabel.setText("Listening…");
+        }
+
+        if (micWarningLabel != null) {
+            micWarningLabel.setVisible(false);
+            micWarningLabel.setManaged(false);
         }
 
         // Enter in caption field sends message
@@ -99,6 +115,40 @@ public class MainViewController {
                 }
             });
         }
+
+        if (historyList != null) {
+            historyList.setCellFactory(list -> new ListCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        setText(item);
+                        boolean important = item.startsWith("★");
+                        boolean remote = item.contains("[REMOTE]");
+                        if (important) {
+                            setStyle("-fx-text-fill: #FFC46B; -fx-font-weight: bold;");
+                        } else if (remote) {
+                            setStyle("-fx-text-fill: #8AB4FF;");
+                        } else {
+                            setStyle("-fx-text-fill: #E5E9F0;");
+                        }
+                    }
+                }
+            });
+        }
+
+        // History drawer slides in/out
+        if (historyDrawer != null) {
+            historyDrawer.setVisible(false);
+            historyDrawer.setManaged(false);
+            historyDrawer.setTranslateX(360);
+            historyTransition = new TranslateTransition(Duration.millis(240), historyDrawer);
+        }
+
+        sttService = new SttService(this::pushCaptionText, this::postCaptionSystemMessage);
     }
 
     // ---------------------------------------------------------------------
@@ -196,7 +246,7 @@ public class MainViewController {
     public void updateSoundLevel(double level) {
         if (levelBar == null) return;
         double clamped = Math.max(0.0, Math.min(1.0, level));
-        Platform.runLater(() -> levelBar.setProgress(clamped));
+        Platform.runLater(() -> animateProgress(levelBar, clamped));
     }
 
     /** Update the live "top 3" view. Called from Interpreter (NOT on FX thread). */
@@ -205,7 +255,7 @@ public class MainViewController {
                            String l3, double s3) {
         Platform.runLater(() -> {
             if (nowLabel != null) {
-                nowLabel.setText(l1 != null ? l1 : "-");
+                animateNowLabel(l1 != null ? l1 : "-");
             }
             updateRow(top1Label, top1Bar, l1, s1);
             updateRow(top2Label, top2Bar, l2, s2);
@@ -223,8 +273,44 @@ public class MainViewController {
         String name = (cls == null) ? "-" : cls;
         double clamped = Math.max(0.0, Math.min(1.0, score));
         int pct = (int) Math.round(clamped * 100.0);
-        label.setText(String.format("%s (%d%%)", name, pct));
-        bar.setProgress(clamped);
+        animateLabel(label, String.format("%s (%d%%)", name, pct));
+        animateProgress(bar, clamped);
+    }
+
+    private void animateNowLabel(String text) {
+        if (nowLabel == null) return;
+        if (Objects.equals(nowLabel.getText(), text)) return;
+        nowLabel.setOpacity(0.25);
+        nowLabel.setText(text);
+        FadeTransition ft = new FadeTransition(Duration.millis(200), nowLabel);
+        ft.setToValue(1.0);
+        ft.play();
+    }
+
+    private void animateLabel(Label label, String text) {
+        if (label == null) return;
+        if (Objects.equals(label.getText(), text)) return;
+        label.setOpacity(0.4);
+        label.setText(text);
+        FadeTransition ft = new FadeTransition(Duration.millis(160), label);
+        ft.setToValue(1.0);
+        ft.play();
+    }
+
+    private void animateProgress(ProgressBar bar, double target) {
+        if (bar == null) return;
+        target = Math.max(0, Math.min(1, target));
+        Timeline existing = progressAnimations.get(bar);
+        if (existing != null) {
+            existing.stop();
+        }
+        double start = bar.getProgress();
+        Timeline t = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(bar.progressProperty(), start)),
+                new KeyFrame(Duration.millis(260), new KeyValue(bar.progressProperty(), target))
+        );
+        progressAnimations.put(bar, t);
+        t.play();
     }
 
     public boolean isMonitored(String label) {
@@ -245,7 +331,7 @@ public class MainViewController {
     public void handleNotification(String label, double score, boolean emergency) {
         Platform.runLater(() -> {
             int pct = (int) Math.round(score * 100.0);
-            String text = String.format("LOCAL: %s (%d%%)", label, pct);
+            String text = String.format("THIS MAC • %s (%d%%)", label, pct);
             if (statusLabel != null) {
                 statusLabel.setText(text);
                 String color = AppConfig.getNotificationColor(label);
@@ -256,7 +342,7 @@ public class MainViewController {
                 NotificationSoundPlayer.play(AppConfig.notificationSound);
             }
 
-            showMacNotification("Local sound", label, score);
+            showMacNotification("This Mac", label, score);
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();
@@ -274,7 +360,7 @@ public class MainViewController {
 
         Platform.runLater(() -> {
             String source = (host == null || host.isBlank()) ? "Remote device" : host;
-            String text = String.format("REMOTE (%s): %s", source, label);
+            String text = String.format("REMOTE (%s) • %s", source, label);
             if (statusLabel != null) {
                 statusLabel.setText(text);
                 String color = AppConfig.getNotificationColor(label);
@@ -292,7 +378,7 @@ public class MainViewController {
                 NotificationSoundPlayer.play(AppConfig.notificationSound);
             }
 
-            showMacNotification("Remote sound", label, score);
+            showMacNotification("Remote: " + source, label, score);
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();
@@ -341,6 +427,11 @@ public class MainViewController {
                 statusLabel.setText("Mic error: " + msg);
                 statusLabel.setStyle("-fx-text-fill: #FF5252;");
             }
+            if (micWarningLabel != null) {
+                micWarningLabel.setText("Mic missing");
+                micWarningLabel.setVisible(true);
+                micWarningLabel.setManaged(true);
+            }
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Microphone problem");
             alert.setHeaderText("Taptic cannot access the microphone.");
@@ -353,23 +444,53 @@ public class MainViewController {
     // History: all sounds (local + remote) with important ones highlighted
     // ---------------------------------------------------------------------
 
+    @FXML
+    private void onHistoryToggled() {
+        if (historyDrawer == null || historyTransition == null) return;
+        boolean show = historyToggle != null && historyToggle.isSelected();
+        historyDrawer.setVisible(true);
+        historyDrawer.setManaged(true);
+        historyTransition.stop();
+        historyTransition.setToX(show ? 0 : 360);
+        historyTransition.setOnFinished(e -> {
+            if (!show) {
+                historyDrawer.setVisible(false);
+                historyDrawer.setManaged(false);
+            }
+        });
+        historyTransition.playFromStart();
+        if (historyToggle != null) {
+            historyToggle.setText(show ? "History ▾" : "▸ History");
+        }
+    }
+
+    @FXML
+    private void onHistoryClearClicked() {
+        if (historyList != null) {
+            historyList.getItems().clear();
+        }
+    }
+
     public void addHistory(String label,
                            double score,
                            boolean emergency,
                            boolean local,
                            String host,
-                           boolean important) {
+                            boolean important) {
         if (historyList == null || label == null) return;
         int pct = (int) Math.round(score * 100.0);
         String src;
         if (local) {
-            src = "LOCAL";
+            src = "[THIS MAC]";
         } else {
-            src = (host == null || host.isBlank()) ? "REMOTE" : "REMOTE(" + host + ")";
+            String h = (host == null || host.isBlank()) ? "remote" : host;
+            src = "[REMOTE " + h + "]";
         }
         String tag = emergency ? "EMERGENCY" : "normal";
         String prefix = important ? "★ " : "";
-        String entry = String.format("%s%s – %s [%s] (%d%%)", prefix, src, label, tag, pct);
+        String time = TIME_FMT.format(LocalTime.now());
+        String entry = String.format("%s%s %s – %s [%s] (%d%%)",
+                prefix, time, src, label, tag, pct);
 
         Platform.runLater(() -> {
             historyList.getItems().add(0, entry); // newest on top
@@ -399,7 +520,7 @@ public class MainViewController {
     private void speakText(String text) {
         new Thread(() -> {
             try {
-                new ProcessBuilder("say", text).start();
+                new ProcessBuilder("say", "-r", "240", text).start();
             } catch (Exception ignored) {
             }
         }, "TTS").start();
@@ -417,106 +538,30 @@ public class MainViewController {
         captionMicToggle.setText(on ? "Listening…" : "Start mic");
 
         if (on) {
-            startCaptionStt();
-        } else {
-            stopCaptionStt();
-        }
-    }
-
-    // ---------------------------------------------------------------------
-    // REAL STT using Vosk
-    // ---------------------------------------------------------------------
-
-    private void startCaptionStt() {
-        synchronized (sttLock) {
-            if (sttRunning) return;
-            sttRunning = true;
-        }
-
-        sttThread = new Thread(() -> {
-            try {
-                // Try to initialize Vosk. On Apple Silicon with x86_64 lib, this will throw.
-                org.vosk.LibVosk.setLogLevel(org.vosk.LogLevel.INFO);
-
-                // IMPORTANT: this path is still just an example; you must match your model location
-                String modelPath = "src/main/resources/vosk-model-small-en-us";
-
-                try (org.vosk.Model model = new org.vosk.Model(modelPath);
-                     org.vosk.Recognizer recognizer = new org.vosk.Recognizer(model, 16000)) {
-
-                    // TODO: Wire actual mic PCM here (reuse YamnetMic or open another TargetDataLine)
-                    // For now, just show that STT is "not fully wired" but don't crash:
-                    Platform.runLater(() -> {
-                        captionList.getItems().add(
-                                new CaptionMessage("System",
-                                        "STT engine loaded, but audio pipeline is not wired yet.")
-                        );
-                    });
-
-                    // Minimal loop stub: exits when sttRunning is false
-                    while (sttRunning) {
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException ignored) { }
-                    }
-                }
-            } catch (UnsatisfiedLinkError e) {
-                // This is exactly the architecture error you’re seeing.
-                e.printStackTrace();
-                Platform.runLater(() -> {
-                    captionList.getItems().add(
-                            new CaptionMessage(
-                                    "System",
-                                    "Speech-to-text engine could not load on this CPU (native Vosk lib is x86_64, but your Mac is arm64).\n" +
-                                            "Options:\n" +
-                                            "• Install an Apple Silicon (arm64) Vosk build, or\n" +
-                                            "• Run Java under Rosetta/x86_64, or\n" +
-                                            "• Switch to a different STT backend."
-                            )
-                    );
-                });
-            } catch (Throwable t) {
-                t.printStackTrace();
-                Platform.runLater(() -> {
-                    captionList.getItems().add(
-                            new CaptionMessage(
-                                    "System",
-                                    "Error starting speech-to-text: " + t.getClass().getSimpleName() +
-                                            " – " + t.getMessage()
-                            )
-                    );
-                });
-            } finally {
-                synchronized (sttLock) {
-                    sttRunning = false;
-                }
+            boolean ok = sttService != null && sttService.start();
+            if (!ok) {
+                captionMicToggle.setSelected(false);
+                captionMicToggle.setText("Start mic");
             }
-        }, "STT");
-        sttThread.setDaemon(true);
-        sttThread.start();
-    }
-
-    private void stopCaptionStt() {
-        synchronized (sttLock) {
-            sttRunning = false;
+        } else {
+            if (sttService != null) {
+                sttService.stop();
+            }
         }
     }
 
-    /**
-     * Very small JSON parser for Vosk result. Expected format:
-     * {"text": "hello world"}
-     */
-    private String extractText(String json) {
-        if (json == null) return null;
-        int idx = json.indexOf("\"text\"");
-        if (idx < 0) return null;
-        int colon = json.indexOf(':', idx);
-        if (colon < 0) return null;
-        int firstQuote = json.indexOf('"', colon + 1);
-        if (firstQuote < 0) return null;
-        int secondQuote = json.indexOf('"', firstQuote + 1);
-        if (secondQuote < 0) return null;
-        return json.substring(firstQuote + 1, secondQuote).trim();
+    private void pushCaptionText(String text) {
+        if (text == null || text.isBlank()) return;
+        Platform.runLater(() -> captionList.getItems().add(new CaptionMessage("Them", text)));
+    }
+
+    // ---------------------------------------------------------------------
+    // REAL STT using Google Cloud Speech (streaming)
+    // ---------------------------------------------------------------------
+
+    private void postCaptionSystemMessage(String text) {
+        if (text == null || text.isBlank()) return;
+        Platform.runLater(() -> captionList.getItems().add(new CaptionMessage("System", text)));
     }
 
     // ---------------------------------------------------------------------

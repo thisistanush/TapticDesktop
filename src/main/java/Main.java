@@ -4,33 +4,34 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+/**
+ * Legacy entry point. Prefer TapticFxApp (richer navigation),
+ * but this stays for compatibility and quick runs.
+ */
 public class Main extends Application {
-
-    private static final int PORT = 50000;
 
     private YamnetMic yamnetMic;
     private BroadcastListener broadcastListener;
+    private static final int PORT = 50000;
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(Main.class.getResource("/MainView.fxml"));
+        FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
         Parent root = loader.load();
         MainViewController controller = loader.getController();
 
         Scene scene = new Scene(root, 640, 520);
-        scene.getStylesheets().add(Main.class.getResource("/main.css").toExternalForm());
+        scene.getStylesheets().add(Main.class.getResource("/fxml/main.css").toExternalForm());
         stage.setTitle("Taptic Desktop");
         stage.setScene(scene);
         stage.show();
 
-        // Networking
         BroadcastSender sender = new BroadcastSender(PORT);
         broadcastListener = new BroadcastListener(PORT);
         Thread listenerThread = new Thread(broadcastListener, "BroadcastListener");
         listenerThread.setDaemon(true);
         listenerThread.start();
 
-        // YamNet mic
         yamnetMic = new YamnetMic();
         Interpreter.init(sender, controller, YamnetMic.getLabels());
 
