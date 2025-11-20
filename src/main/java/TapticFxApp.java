@@ -4,19 +4,17 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
 
 public class TapticFxApp extends Application {
 
-    private static TapticFxApp instance;
-
-    private static final int PORT = 50000;
+    private static TapticFxApp INSTANCE;
 
     private Stage primaryStage;
-    private Parent mainRoot;
-    private Parent settingsRoot;
+    private Scene mainScene;
+    private Scene settingsScene;
+
     private MainViewController mainController;
     private SettingsController settingsController;
 
@@ -24,124 +22,178 @@ public class TapticFxApp extends Application {
     private BroadcastListener broadcastListener;
     private BroadcastSender broadcastSender;
 
-    private String[] labels;
+    private static final int PORT = 50000;
 
     public TapticFxApp() {
-        instance = this;
+        INSTANCE = this;
     }
 
     public static TapticFxApp getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     @Override
     public void start(Stage stage) throws Exception {
         this.primaryStage = stage;
 
-        // Try several possible FXML locations, grab the first one that exists.
-        List<String> possibleMainFxml = Arrays.asList(
-                "/MainView.fxml",
-                "/mainView.fxml",
-                "/mainview.fxml",
-                "/main_view.fxml",
+        // ----- MAIN VIEW -----
+        URL mainFxml = findResource(
                 "/fxml/MainView.fxml",
-                "/fxml/mainView.fxml",
-                "/fxml/mainview.fxml",
-                "/fxml/main_view.fxml"
+                "/fxml/main_view.fxml",
+                "/MainView.fxml",
+                "/main_view.fxml"
         );
-
-        URL mainFxml = null;
-        for (String path : possibleMainFxml) {
-            URL u = TapticFxApp.class.getResource(path);
-            if (u != null) {
-                mainFxml = u;
-                System.out.println("Loaded MainView FXML from: " + path);
-                break;
-            }
-        }
-
         if (mainFxml == null) {
             throw new IllegalStateException(
-                    "Could not find MainView.fxml. Tried: " + possibleMainFxml +
-                            "\nMake sure one of those files exists under src/main/resources."
+                    "Could not find MainView.fxml or main_view.fxml.\n" +
+                            "Put it in one of:\n" +
+                            "  src/main/resources/fxml/MainView.fxml\n" +
+                            "  src/main/resources/fxml/main_view.fxml\n" +
+                            "  src/main/resources/MainView.fxml\n" +
+                            "  src/main/resources/main_view.fxml"
             );
         }
 
         FXMLLoader mainLoader = new FXMLLoader(mainFxml);
-        mainRoot = mainLoader.load();
+        Parent mainRoot = mainLoader.load();
         mainController = mainLoader.getController();
 
-        Scene scene = new Scene(mainRoot, 640, 520);
-        addCss(scene);
+        mainScene = new Scene(mainRoot, 900, 600);
+        applyCss(mainScene);
 
         stage.setTitle("Taptic Desktop");
-        stage.setScene(scene);
-        stage.setMinWidth(500);
-        stage.setMinHeight(600);
+        stage.setScene(mainScene);
+        stage.setMinWidth(800);
+        stage.setMinHeight(500);
         stage.show();
 
-        // Backend
-        broadcastSender = new BroadcastSender(PORT);
-        broadcastListener = new BroadcastListener(PORT);
-        Thread listenerThread = new Thread(broadcastListener, "BroadcastListener");
-        listenerThread.setDaemon(true);
-        listenerThread.start();
-
-        yamnetMic = new YamnetMic();
-        labels = YamnetMic.getLabels();
-
-        Interpreter.init(broadcastSender, mainController, labels);
-
-        Thread micThread = new Thread(yamnetMic, "YamnetMic");
-        micThread.setDaemon(true);
-        micThread.start();
+        // ----- AUDIO + NETWORK -----
+        startAudioAndNetwork();
     }
 
-    private void addCss(Scene scene) {
-        URL css = TapticFxApp.class.getResource("/main.css");
-        if (css == null) {
-            css = TapticFxApp.class.getResource("/css/main.css");
-        }
-        if (css != null) {
-            scene.getStylesheets().add(css.toExternalForm());
-        }
-    }
-
-    public void showSettingsView() {
-        try {
-            if (settingsRoot == null) {
-                URL settingsFxml = TapticFxApp.class.getResource("/SettingsView.fxml");
-                if (settingsFxml == null) {
-                    // Try alternative locations too
-                    settingsFxml = TapticFxApp.class.getResource("/fxml/SettingsView.fxml");
-                }
-                if (settingsFxml == null) {
-                    throw new IllegalStateException(
-                            "Could not find SettingsView.fxml. " +
-                                    "Place it as /SettingsView.fxml or /fxml/SettingsView.fxml under src/main/resources."
-                    );
-                }
-                FXMLLoader loader = new FXMLLoader(settingsFxml);
-                settingsRoot = loader.load();
-                settingsController = loader.getController();
-                if (labels != null) {
-                    settingsController.initWithLabels(labels);
-                }
+    // Helper that tries multiple resource paths and returns the first that exists
+    private URL findResource(String... paths) {
+        for (String p : paths) {
+            URL url = getClass().getResource(p);
+            if (url != null) {
+                return url;
             }
-            primaryStage.getScene().setRoot(settingsRoot);
+        }
+        return null;
+    }
+
+    // Helper to apply CSS from likely locations
+    private void applyCss(Scene scene) {
+        if (scene == null) return;
+
+        String[] cssPaths = {
+                "/fxml/main.css",
+                "/main.css",
+                "/fxml/styles.css",
+                "/styles.css"
+        };
+
+        for (String p : cssPaths) {
+            URL css = getClass().getResource(p);
+            if (css != null) {
+                scene.getStylesheets().add(css.toExternalForm());
+                break;
+            }
+        }
+    }
+
+    private void startAudioAndNetwork() {
+        // Broadcast sender / listener
+        try {
+            broadcastSender = new BroadcastSender(PORT);
+            broadcastListener = new BroadcastListener(PORT);
+            Thread listenerThread = new Thread(broadcastListener, "BroadcastListener");
+            listenerThread.setDaemon(true);
+            listenerThread.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // Interpreter hooks: controller + broadcast sender + labels
+        try {
+            yamnetMic = new YamnetMic();
+            Interpreter.init(broadcastSender, mainController, YamnetMic.getLabels());
+
+            Thread micThread = new Thread(yamnetMic, "YamnetMic");
+            micThread.setDaemon(true);
+            micThread.start();
+
+            if (mainController != null) {
+                mainController.setStatusText("Listening… say something loud near the mic.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (mainController != null) {
+                mainController.showMicError(e.getMessage());
+            }
+        }
+    }
+
+    // ----- SETTINGS NAV -----
+
+    public void showSettingsView() {
+        if (settingsScene == null) {
+            try {
+                URL settingsFxml = findResource(
+                        "/fxml/SettingsView.fxml",
+                        "/fxml/settings_view.fxml",
+                        "/SettingsView.fxml",
+                        "/settings_view.fxml"
+                );
+                if (settingsFxml == null) {
+                    throw new IllegalStateException(
+                            "Could not find SettingsView.fxml or settings_view.fxml.\n" +
+                                    "Put it in one of:\n" +
+                                    "  src/main/resources/fxml/SettingsView.fxml\n" +
+                                    "  src/main/resources/fxml/settings_view.fxml\n" +
+                                    "  src/main/resources/SettingsView.fxml\n" +
+                                    "  src/main/resources/settings_view.fxml"
+                    );
+                }
+
+                FXMLLoader settingsLoader = new FXMLLoader(settingsFxml);
+                Parent settingsRoot = settingsLoader.load();
+                settingsController = settingsLoader.getController();
+
+                settingsScene = new Scene(settingsRoot, 900, 600);
+                applyCss(settingsScene);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load SettingsView FXML", e);
+            }
+        }
+
+        primaryStage.setScene(settingsScene);
     }
 
     public void showMainView() {
-        if (primaryStage != null && mainRoot != null) {
-            primaryStage.getScene().setRoot(mainRoot);
+        if (mainScene != null) {
+            primaryStage.setScene(mainScene);
         }
+    }
+
+    // Bubble text hook (for future floating popup UI)
+    public void updateBubbleText(String text) {
+        // Implement floating bubble UI later if you want
+    }
+
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+    public MainViewController getMainController() {
+        return mainController;
     }
 
     @Override
     public void stop() throws Exception {
+        super.stop();
+        // Clean up audio + network
         if (yamnetMic != null) {
             yamnetMic.stopListening();
             yamnetMic.close();

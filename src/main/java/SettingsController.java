@@ -1,10 +1,20 @@
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class SettingsController {
 
@@ -22,22 +32,32 @@ public class SettingsController {
     @FXML private Label broadcastSendHelpLabel;
     @FXML private Label broadcastListenHelpLabel;
 
+    // Per-sound notification colors
+    @FXML private VBox notificationColorBox;
+
     private final Map<String, CheckBox> broadcastSendMap = new HashMap<>();
     private final Map<String, CheckBox> broadcastListenMap = new HashMap<>();
 
     @FXML
     private void initialize() {
-        // Initial values from AppConfig
         if (soundCheckBox != null) {
             soundCheckBox.setSelected(AppConfig.playSound);
-            soundCheckBox.setTooltip(new Tooltip("If enabled, Taptic plays a sound whenever a notification is triggered."));
-            soundCheckBox.selectedProperty().addListener((obs, old, val) -> AppConfig.playSound = val);
+            soundCheckBox.setTooltip(new Tooltip(
+                    "If enabled, Taptic plays a sound whenever a notification is triggered."
+            ));
+            soundCheckBox.selectedProperty().addListener(
+                    (obs, old, val) -> AppConfig.playSound = val
+            );
         }
 
         if (flashCheckBox != null) {
             flashCheckBox.setSelected(AppConfig.flashEmergency);
-            flashCheckBox.setTooltip(new Tooltip("If enabled, the screen flashes red for a few seconds for emergency sounds."));
-            flashCheckBox.selectedProperty().addListener((obs, old, val) -> AppConfig.flashEmergency = val);
+            flashCheckBox.setTooltip(new Tooltip(
+                    "If enabled, the screen flashes red for a few seconds for emergency sounds."
+            ));
+            flashCheckBox.selectedProperty().addListener(
+                    (obs, old, val) -> AppConfig.flashEmergency = val
+            );
         }
 
         if (sensitivitySlider != null) {
@@ -54,36 +74,47 @@ public class SettingsController {
         }
 
         if (notificationSoundChoiceBox != null) {
-            notificationSoundChoiceBox.getItems().addAll("System beep", "Double beep", "None");
-            notificationSoundChoiceBox.setValue(AppConfig.notificationSound);
-            notificationSoundChoiceBox.getSelectionModel().selectedItemProperty().addListener(
-                    (obs, old, val) -> {
-                        if (val != null) AppConfig.notificationSound = val;
-                    }
+            notificationSoundChoiceBox.getItems().addAll(
+                    "System beep",
+                    "Double beep",
+                    "None"
             );
+            notificationSoundChoiceBox.setValue(AppConfig.notificationSound);
+            notificationSoundChoiceBox.getSelectionModel().selectedItemProperty()
+                    .addListener((obs, old, val) -> {
+                        if (val != null) {
+                            AppConfig.notificationSound = val;
+                        }
+                    });
         }
 
         if (soundHelpLabel != null) {
-            soundHelpLabel.setText("Choose whether Taptic should play a sound when it sends you a notification.");
+            soundHelpLabel.setText(
+                    "Choose whether Taptic should play a sound when it sends you a notification."
+            );
         }
         if (flashHelpLabel != null) {
-            flashHelpLabel.setText("Emergency sounds (fire alarm, glass breaking, gunshot, etc.) can flash the screen red so you notice them visually.");
+            flashHelpLabel.setText(
+                    "Emergency sounds (fire alarm, glass breaking, gunshot, etc.) can flash the screen red so you notice them visually."
+            );
         }
         if (sensitivityHelpLabel != null) {
-            sensitivityHelpLabel.setText("Higher sensitivity → more notifications (even low-confidence detections). Lower sensitivity → only very confident detections.");
+            sensitivityHelpLabel.setText(
+                    "Higher sensitivity → more notifications (even low-confidence detections). Lower sensitivity → only very confident detections."
+            );
         }
         if (broadcastSendHelpLabel != null) {
-            broadcastSendHelpLabel.setText("Select which sounds this device should broadcast to other Taptic Desktop instances on your network.");
+            broadcastSendHelpLabel.setText(
+                    "Select which sounds this device should broadcast to other Taptic Desktop instances on your network."
+            );
         }
         if (broadcastListenHelpLabel != null) {
-            broadcastListenHelpLabel.setText("Select which sounds from other devices this computer should react to (as if it heard them itself).");
+            broadcastListenHelpLabel.setText(
+                    "Select which sounds from other devices this computer should react to (as if it heard them itself)."
+            );
         }
     }
 
-    /**
-     * Called from TapticFxApp when settings view is first created.
-     * Populates broadcast send/listen lists.
-     */
     public void initWithLabels(String[] allLabels) {
         if (allLabels == null) return;
 
@@ -96,32 +127,75 @@ public class SettingsController {
         interesting.sort(String.CASE_INSENSITIVE_ORDER);
 
         Platform.runLater(() -> {
+            if (broadcastSendBox == null || broadcastListenBox == null || notificationColorBox == null) {
+                // If this hits, FXML isn't wired correctly.
+                System.err.println("SettingsController: one of the VBox fields is null. Check fx:id in SettingsView.fxml.");
+                return;
+            }
+
             broadcastSendBox.getChildren().clear();
             broadcastListenBox.getChildren().clear();
+            notificationColorBox.getChildren().clear();
+
             broadcastSendMap.clear();
             broadcastListenMap.clear();
 
             for (String label : interesting) {
-                // Send
+                // Broadcast send
                 CheckBox sendCb = new CheckBox(label);
-                sendCb.setSelected(true); // default: send everything useful
-                sendCb.setTooltip(new Tooltip("If checked, this device tells the network when it hears this sound."));
+                sendCb.setSelected(true);
+                sendCb.setTooltip(new Tooltip(
+                        "If checked, this device tells the network when it hears this sound."
+                ));
                 broadcastSendMap.put(label, sendCb);
                 broadcastSendBox.getChildren().add(sendCb);
-                // Initialize AppConfig
                 AppConfig.setBroadcastSendEnabled(label, true);
-                sendCb.selectedProperty().addListener(makeBroadcastListener(label, true));
+                sendCb.selectedProperty().addListener(
+                        makeBroadcastListener(label, true)
+                );
 
-                // Listen
+                // Broadcast listen
                 CheckBox listenCb = new CheckBox(label);
-                listenCb.setSelected(true); // default: listen to everything useful
-                listenCb.setTooltip(new Tooltip("If checked, this device reacts when another device hears this sound."));
+                listenCb.setSelected(true);
+                listenCb.setTooltip(new Tooltip(
+                        "If checked, this device reacts when another device hears this sound."
+                ));
                 broadcastListenMap.put(label, listenCb);
                 broadcastListenBox.getChildren().add(listenCb);
                 AppConfig.setBroadcastListenEnabled(label, true);
-                listenCb.selectedProperty().addListener(makeBroadcastListener(label, false));
+                listenCb.selectedProperty().addListener(
+                        makeBroadcastListener(label, false)
+                );
+
+                // Per-sound color row
+                HBox row = new HBox(8);
+                Label nameLabel = new Label(label);
+
+                javafx.scene.control.ColorPicker picker =
+                        new javafx.scene.control.ColorPicker(Color.web(AppConfig.getNotificationColor(label)));
+                picker.setPrefWidth(120);
+                picker.setTooltip(new Tooltip(
+                        "Color used when this sound triggers a notification."
+                ));
+
+                picker.valueProperty().addListener((obs, old, val) -> {
+                    if (val != null) {
+                        String cssColor = toCssColor(val);
+                        AppConfig.setNotificationColor(label, cssColor);
+                    }
+                });
+
+                row.getChildren().addAll(nameLabel, picker);
+                notificationColorBox.getChildren().add(row);
             }
         });
+    }
+
+    private String toCssColor(Color c) {
+        int r = (int) Math.round(c.getRed() * 255);
+        int g = (int) Math.round(c.getGreen() * 255);
+        int b = (int) Math.round(c.getBlue() * 255);
+        return String.format("#%02X%02X%02X", r, g, b);
     }
 
     private ChangeListener<Boolean> makeBroadcastListener(String label, boolean send) {
@@ -134,7 +208,6 @@ public class SettingsController {
         };
     }
 
-    // Reuse the same "interesting" heuristics
     private boolean isInterestingLabel(String label) {
         String lower = label.toLowerCase(Locale.ROOT);
 
@@ -171,7 +244,6 @@ public class SettingsController {
         for (String g : good) {
             if (lower.contains(g)) return true;
         }
-
         return false;
     }
 

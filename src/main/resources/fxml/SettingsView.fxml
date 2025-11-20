@@ -1,36 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.TitledPane?>
-<?import javafx.scene.control.Tooltip?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane fx:id="rootPane" stylesheets="@taptic.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SettingsController">
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:id="rootPane"
+            fx:controller="SettingsController">
 
-    <!-- Top bar with back button -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="header-bar">
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              styleClass="header-bar">
             <padding>
-                <Insets bottom="8" left="12" right="12" top="8" />
+                <Insets top="8" right="12" bottom="8" left="12"/>
             </padding>
-            <Button onAction="#onBackClicked" styleClass="header-button" text="← Back">
+            <Button text="← Back"
+                    styleClass="header-button"
+                    onAction="#onBackClicked">
                 <tooltip>
-                    <Tooltip text="Return to live view" />
+                    <Tooltip text="Return to live view"/>
                 </tooltip>
             </Button>
 
-            <Label styleClass="settings-header-title" text="Settings and Network" />
+            <Label text="Settings and Network"
+                   styleClass="settings-header-title"/>
 
-            <Pane HBox.hgrow="ALWAYS" />
+            <Pane HBox.hgrow="ALWAYS"/>
         </HBox>
     </top>
 
@@ -39,60 +35,94 @@
             <content>
                 <VBox spacing="18">
                     <padding>
-                        <Insets bottom="16" left="16" right="16" top="16" />
+                        <Insets top="16" right="16" bottom="16" left="16"/>
                     </padding>
 
-                    <!-- Notification behavior -->
-                    <TitledPane expanded="true" text="Notification behavior">
+                    <TitledPane text="Notification behavior" expanded="true">
                         <content>
                             <VBox spacing="10">
-                                <CheckBox fx:id="soundCheckBox" text="Play a sound when a notification is triggered" />
-                                <Label fx:id="soundHelpLabel" styleClass="settings-help" wrapText="true" />
+                                <CheckBox fx:id="soundCheckBox"
+                                          text="Play a sound when a notification is triggered"/>
+                                <Label fx:id="soundHelpLabel"
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
 
-                                <HBox alignment="CENTER_LEFT" spacing="8">
-                                    <Label text="Notification sound:" />
-                                    <ChoiceBox fx:id="notificationSoundChoiceBox" prefWidth="180" />
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Notification sound:"/>
+                                    <ChoiceBox fx:id="notificationSoundChoiceBox" prefWidth="180"/>
                                 </HBox>
 
-                                <CheckBox fx:id="flashCheckBox" text="Flash screen red for emergency sounds" />
-                                <Label fx:id="flashHelpLabel" styleClass="settings-help" wrapText="true" />
+                                <CheckBox fx:id="flashCheckBox"
+                                          text="Flash screen red for emergency sounds"/>
+                                <Label fx:id="flashHelpLabel"
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
 
-                                <HBox alignment="CENTER_LEFT" spacing="8">
-                                    <Label text="Sensitivity:" />
-                                    <Slider fx:id="sensitivitySlider" max="0.9" min="0.1" prefWidth="260" value="0.30" />
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Sensitivity:"/>
+                                    <Slider fx:id="sensitivitySlider"
+                                            prefWidth="260"
+                                            min="0.1" max="0.9" value="0.30"/>
                                 </HBox>
-                                <Label fx:id="sensitivityHelpLabel" styleClass="settings-help" wrapText="true" />
+                                <Label fx:id="sensitivityHelpLabel"
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
+
+                                <Separator/>
+
+                                <Label text="Per-sound notification colors"
+                                       styleClass="settings-section-title"/>
+                                <Label text="These colors are used for the status text and notifications when each sound is detected."
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
+
+                                <ScrollPane fitToWidth="true" prefHeight="200">
+                                    <content>
+                                        <VBox fx:id="notificationColorBox" spacing="6">
+                                            <padding>
+                                                <Insets top="8" right="8" bottom="8" left="8"/>
+                                            </padding>
+                                        </VBox>
+                                    </content>
+                                </ScrollPane>
                             </VBox>
                         </content>
                     </TitledPane>
 
-                    <!-- Broadcast configuration -->
-                    <TitledPane expanded="true" text="Network broadcast">
+                    <TitledPane text="Network broadcast" expanded="true">
                         <content>
                             <VBox spacing="12">
-                                <Label styleClass="settings-help" text="When one Taptic Desktop hears a sound, it can tell the others on your local network." wrapText="true" />
+                                <Label text="When one Taptic Desktop hears a sound, it can tell the others on your local network."
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
 
-                                <Label styleClass="settings-section-title" text="Broadcast send" />
-                                <Label fx:id="broadcastSendHelpLabel" styleClass="settings-help" wrapText="true" />
+                                <Label text="Broadcast send"
+                                       styleClass="settings-section-title"/>
+                                <Label fx:id="broadcastSendHelpLabel"
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
 
                                 <ScrollPane fitToWidth="true" prefHeight="160">
                                     <content>
                                         <VBox fx:id="broadcastSendBox" spacing="6">
                                             <padding>
-                                                <Insets bottom="10" left="10" right="10" top="10" />
+                                                <Insets top="10" right="10" bottom="10" left="10"/>
                                             </padding>
                                         </VBox>
                                     </content>
                                 </ScrollPane>
 
-                                <Label styleClass="settings-section-title" text="Broadcast listen" />
-                                <Label fx:id="broadcastListenHelpLabel" styleClass="settings-help" wrapText="true" />
+                                <Label text="Broadcast listen"
+                                       styleClass="settings-section-title"/>
+                                <Label fx:id="broadcastListenHelpLabel"
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
 
                                 <ScrollPane fitToWidth="true" prefHeight="160">
                                     <content>
                                         <VBox fx:id="broadcastListenBox" spacing="6">
                                             <padding>
-                                                <Insets bottom="10" left="10" right="10" top="10" />
+                                                <Insets top="10" right="10" bottom="10" left="10"/>
                                             </padding>
                                         </VBox>
                                     </content>

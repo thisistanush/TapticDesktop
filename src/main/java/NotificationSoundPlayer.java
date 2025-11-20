@@ -1,30 +1,26 @@
-import java.awt.*;
+import java.awt.Toolkit;
 
+/**
+ * Small helper for playing simple notification sounds.
+ * Keeps MainViewController clean.
+ */
 public final class NotificationSoundPlayer {
 
     private NotificationSoundPlayer() {}
 
-    public static void play(String soundName) {
-        if (soundName == null || "None".equalsIgnoreCase(soundName)) {
+    public static void play(String name) {
+        if (name == null) return;
+        String trimmed = name.trim();
+        if (trimmed.equalsIgnoreCase("None")) {
             return;
         }
-
-        // Run on a background thread so we never block JavaFX
-        new Thread(() -> {
-            try {
-                if ("System beep".equalsIgnoreCase(soundName)) {
-                    Toolkit.getDefaultToolkit().beep();
-                } else if ("Double beep".equalsIgnoreCase(soundName)) {
-                    Toolkit.getDefaultToolkit().beep();
-                    Thread.sleep(150);
-                    Toolkit.getDefaultToolkit().beep();
-                } else {
-                    // fallback
-                    Toolkit.getDefaultToolkit().beep();
-                }
-            } catch (InterruptedException ignored) {
-            } catch (Throwable ignored) {
+        try {
+            Toolkit.getDefaultToolkit().beep();
+            if (trimmed.equalsIgnoreCase("Double beep")) {
+                Thread.sleep(130);
+                Toolkit.getDefaultToolkit().beep();
             }
-        }, "NotifySound").start();
+        } catch (Throwable ignored) {
+        }
     }
 }

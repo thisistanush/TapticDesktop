@@ -21,36 +21,53 @@ public final class Interpreter {
     private Interpreter() {}
 
     /**
-     * Called once from TapticFxApp after everything is created.
+     * Called once from TapticFxApp when everything is created.
      */
     public static void init(BroadcastSender s,
                             MainViewController c,
                             String[] allLabels) {
         sender = s;
         mainController = c;
-        if (mainController != null) {
+        if (mainController != null && allLabels != null) {
             mainController.initMonitoredLists(allLabels);
         }
     }
 
     /**
-     * Called from YamnetMic worker thread for every ~0.5s frame.
+     * Backwards-compat hook if anything still calls this.
+     * (Not strictly needed, but harmless.)
      */
-    public static void onFrame(float[] scores, String[] labels) {
+    public static void setUiController(MainViewController c) {
+        mainController = c;
+    }
+
+    /**
+     * Main entry from YamnetMic: scores + label list + raw level.
+     */
+    public static void onFrame(float[] scores, String[] labels, double level) {
         if (mainController == null || scores == null || scores.length == 0) {
             return;
         }
 
+        // Sound level meter
+        mainController.updateSoundLevel(level);
+
         int n = scores.length;
         if (n < 3) {
-            double s1 = scores[0];
-            String l1 = labelAt(labels, 0);
-            mainController.updateTop3(l1, s1, null, 0.0, null, 0.0);
-            maybeNotify(l1, s1);
+            String l = labelAt(labels, 0);
+            double s = scores[0];
+
+            boolean emergency = isEmergency(l);
+
+            // history: all sounds (important = false)
+            mainController.addHistory(l, s, emergency, true, null, false);
+
+            mainController.updateTop3(l, s, null, 0.0, null, 0.0);
+            maybeNotify(l, s, true, null);
             return;
         }
 
-        // Find top-3 indices by raw score
+        // Find top-3 indices by raw score (defensive, avoids out of bounds)
         int best1 = 0, best2 = 1, best3 = 2;
         for (int i = 0; i < n; i++) {
             float v = scores[i];
@@ -74,6 +91,15 @@ public final class Interpreter {
         double s2 = scores[best2];
         double s3 = scores[best3];
 
+        boolean e1 = isEmergency(l1);
+        boolean e2 = isEmergency(l2);
+        boolean e3 = isEmergency(l3);
+
+        // add all heard sounds to history (important = false)
+        mainController.addHistory(l1, s1, e1, true, null, false);
+        mainController.addHistory(l2, s2, e2, true, null, false);
+        mainController.addHistory(l3, s3, e3, true, null, false);
+
         // Smooth rankings so the progress bars feel less laggy
         if (firstFrame) {
             smooth1 = s1;
@@ -89,9 +115,17 @@ public final class Interpreter {
         mainController.updateTop3(l1, smooth1, l2, smooth2, l3, smooth3);
 
         // Notification logic uses RAW scores, not smoothed
-        maybeNotify(l1, s1);
-        maybeNotify(l2, s2);
-        maybeNotify(l3, s3);
+        maybeNotify(l1, s1, true, null);
+        maybeNotify(l2, s2, true, null);
+        maybeNotify(l3, s3, true, null);
+    }
+
+    /**
+     * Backwards-compat overload: old code calling onFrame(scores, labels)
+     * still works – level just defaults to 0.
+     */
+    public static void onFrame(float[] scores, String[] labels) {
+        onFrame(scores, labels, 0.0);
     }
 
     private static String labelAt(String[] labels, int idx) {
@@ -102,12 +136,15 @@ public final class Interpreter {
         return (l == null || l.isEmpty()) ? ("class_" + idx) : l;
     }
 
-    private static void maybeNotify(String label, double rawScore) {
+    private static void maybeNotify(String label,
+                                    double rawScore,
+                                    boolean local,
+                                    String host) {
         if (mainController == null || label == null) return;
         if (!mainController.isMonitored(label)) return;
         if (!mainController.isNotifyEnabled(label)) return;
 
-        double threshold = AppConfig.notifyThreshold;
+        double threshold = AppConfig.notifyThreshold; // global slider
         if (rawScore < threshold) return;
 
         long now = System.currentTimeMillis();
@@ -117,8 +154,8 @@ public final class Interpreter {
 
         boolean emergency = isEmergency(label);
 
-        // Broadcast to other desktops if user wants to send this label
-        if (sender != null && AppConfig.isBroadcastSendEnabled(label)) {
+        // Broadcast to other desktops if local + user wants to send this label
+        if (local && sender != null && AppConfig.isBroadcastSendEnabled(label)) {
             try {
                 sender.sendEvent(label);
             } catch (IOException e) {
@@ -126,7 +163,14 @@ public final class Interpreter {
             }
         }
 
-        mainController.handleNotification(label, rawScore, emergency);
+        // Mark as important in history + trigger UI
+        if (local) {
+            mainController.handleNotification(label, rawScore, emergency);
+            mainController.addHistory(label, rawScore, emergency, true, null, true);
+        } else {
+            mainController.handleRemoteNotification(label, host, emergency);
+            mainController.addHistory(label, rawScore, emergency, false, host, true);
+        }
     }
 
     /**
@@ -143,7 +187,9 @@ public final class Interpreter {
                 || s.contains("gunshot")
                 || s.contains("explosion")
                 || s.contains("emergency")
-                || s.contains("screaming");
+                || s.contains("screaming")
+                || s.contains("crying")
+                || s.contains("baby");
     }
 
     /**
@@ -161,11 +207,20 @@ public final class Interpreter {
                 return;
             }
 
-            boolean emergency = isEmergency(label);
-            mainController.handleRemoteNotification(label, host, emergency);
+            // remote events are treated as full-confidence important hits
+            maybeNotify(label, 1.0, false, host);
 
         } catch (Exception e) {
             System.err.println("Bad broadcast JSON: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Mic error reporting from YamnetMic.
+     */
+    public static void reportMicError(String msg) {
+        if (mainController != null) {
+            mainController.showMicError(msg);
         }
     }
 }

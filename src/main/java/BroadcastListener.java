@@ -42,11 +42,10 @@ public class BroadcastListener implements Closeable, Runnable {
                 );
 
                 // ignore messages this host emitted
-                if (text.indexOf(getHostName()) >= 0) {
+                if (text.contains(getHostName())) {
                     continue;
                 }
 
-                // hand off to Interpreter so it can update UI / notifications
                 Interpreter.handleBroadcastJson(text);
 
             } catch (IOException e) {

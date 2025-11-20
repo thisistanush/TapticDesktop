@@ -1,5 +1,7 @@
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public final class AppConfig {
@@ -17,6 +19,10 @@ public final class AppConfig {
             Collections.synchronizedSet(new HashSet<>());
     private static final Set<String> broadcastListenLabels =
             Collections.synchronizedSet(new HashSet<>());
+
+    // Per-label notification colors (CSS color strings like "#FF5252")
+    private static final Map<String, String> notificationColors =
+            Collections.synchronizedMap(new HashMap<>());
 
     public static void setBroadcastSendEnabled(String label, boolean enabled) {
         if (label == null) return;
@@ -44,5 +50,22 @@ public final class AppConfig {
     public static boolean isBroadcastListenEnabled(String label) {
         if (label == null) return false;
         return broadcastListenLabels.contains(label);
+    }
+
+    public static void setNotificationColor(String label, String cssColor) {
+        if (label == null || cssColor == null || cssColor.isEmpty()) return;
+        notificationColors.put(label, cssColor);
+    }
+
+    public static String getNotificationColor(String label) {
+        if (label == null) return "#8AB4FF";
+        String c = notificationColors.get(label);
+        if (c != null) return c;
+
+        // Default: emergencies are red, others blue
+        if (Interpreter.isEmergency(label)) {
+            return "#FF5252";
+        }
+        return "#8AB4FF";
     }
 }

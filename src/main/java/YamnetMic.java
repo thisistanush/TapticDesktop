@@ -32,7 +32,7 @@ public class YamnetMic implements AutoCloseable, Runnable {
     public YamnetMic() throws Exception {
         File modelFile = extractResource(
                 "/models/lite-model_yamnet_classification_tflite_1.tflite",
-                "yamnet"
+                "yamnet.tflite"
         );
 
         model = tensorflowlite.TfLiteModelCreateFromFile(
@@ -42,7 +42,6 @@ public class YamnetMic implements AutoCloseable, Runnable {
         }
 
         options = tensorflowlite.TfLiteInterpreterOptionsCreate();
-        // Multi-thread the inference a bit
         tensorflowlite.TfLiteInterpreterOptionsSetNumThreads(options, 4);
 
         interpreter = tensorflowlite.TfLiteInterpreterCreate(model, options);
@@ -50,7 +49,7 @@ public class YamnetMic implements AutoCloseable, Runnable {
             throw new IOException("TfLiteInterpreterCreate failed");
         }
 
-        int[] dims = {WIN_SAMPLES};
+        int[] dims = { WIN_SAMPLES };
         int st = tensorflowlite.TfLiteInterpreterResizeInputTensor(
                 interpreter, 0, dims, dims.length);
         if (st != tensorflowlite.kTfLiteOk) {
@@ -86,8 +85,14 @@ public class YamnetMic implements AutoCloseable, Runnable {
                 SR, 16, 1, 2, SR, false);
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, fmt);
 
-        micLine = (TargetDataLine) AudioSystem.getLine(info);
-        micLine.open(fmt, SR * 2);
+        try {
+            micLine = (TargetDataLine) AudioSystem.getLine(info);
+            micLine.open(fmt, SR * 2);
+        } catch (Exception e) {
+            Interpreter.reportMicError("Microphone not available: " + e.getMessage());
+            return;
+        }
+
         micLine.start();
 
         byte[] hopBytes = new byte[HOP_SAMPLES * 2];
@@ -116,8 +121,17 @@ public class YamnetMic implements AutoCloseable, Runnable {
                 continue;
             }
 
+            // simple RMS level for sound intensity meter
+            double sumSq = 0.0;
+            for (int i = 0; i < WIN_SAMPLES; i++) {
+                double v = ring[i];
+                sumSq += v * v;
+            }
+            double rms = Math.sqrt(sumSq / WIN_SAMPLES); // 0..~1
+            double level = Math.min(1.0, rms * 4.0);      // amplify a bit
+
             float[] scores = infer(ring);
-            Interpreter.onFrame(scores, LABELS);
+            Interpreter.onFrame(scores, LABELS, level);
         }
     }
 
