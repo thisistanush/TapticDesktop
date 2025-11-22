@@ -2,8 +2,9 @@
 
 .root {
     -fx-font-family: "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial;
-    -fx-background-color: radial-gradient(radius 120%, #0C1024, #050814);
-    -fx-text-fill: #ECEFF4;
+    /* Ultra-deep background */
+    -fx-background-color: radial-gradient(radius 120%, #000000, #000000);
+    -fx-text-fill: #FFFFFF;
 }
 
 /* The main BorderPane in both screens */
@@ -11,14 +12,15 @@
     -fx-background-color: transparent;
 }
 
-/* Generic labels */
+/* Generic labels - **Pure White for maximum readability** */
 .label {
     -fx-font-smoothing-type: lcd;
-    -fx-text-fill: #E5E9F0;
+    -fx-text-fill: #FFFFFF;
 }
 .mic-warning {
-    -fx-background-color: rgba(255,193,7,0.18);
-    -fx-text-fill: #FDD835;
+    /* High-contrast warning */
+    -fx-background-color: rgba(255, 215, 0, 0.35);
+    -fx-text-fill: #FFEB3B; /* Neon yellow */
     -fx-padding: 4 8 4 8;
     -fx-background-radius: 8;
     -fx-font-size: 12;
@@ -27,8 +29,9 @@
 /* Header bar ------------------------------------------------------------- */
 
 .header-bar {
-    -fx-background-color: linear-gradient(to right, #1B1D3A, #2E2D63, #3E2A72);
-    -fx-border-color: #17192F;
+    /* Dark gray-blue header with a bright purple line */
+    -fx-background-color: #14141E;
+    -fx-border-color: #673AB7; /* Brighter purple accent line */
     -fx-border-width: 0 0 1 0;
 }
 
@@ -39,8 +42,9 @@
 }
 
 .header-button {
-    -fx-background-color: rgba(255,255,255,0.06);
-    -fx-text-fill: #E0E3FF;
+    /* Dark, distinct button with white text */
+    -fx-background-color: #262630;
+    -fx-text-fill: #FFFFFF;
     -fx-font-size: 13;
     -fx-background-radius: 10;
     -fx-padding: 6 10 6 10;
@@ -50,13 +54,13 @@
 
 .status-label {
     -fx-font-size: 15;
-    -fx-text-fill: #8AB4FF;
+    -fx-text-fill: #90CAF9; /* Bright status blue */
 }
 
 .now-caption {
     -fx-font-size: 16;
     -fx-font-weight: bold;
-    -fx-text-fill: #C6D0FF;
+    -fx-text-fill: #E5E5E5;
 }
 
 .now-label {
@@ -70,13 +74,14 @@
 .card {
     -fx-padding: 18;
     -fx-background-radius: 18;
-    -fx-background-color: linear-gradient(to bottom, #161926, #10121C);
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 18, 0.25, 0, 6);
+    /* Distinct dark blue-gray background for card */
+    -fx-background-color: linear-gradient(to bottom, #11111A, #08080F);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 30, 0.6, 0, 12); /* Maximum shadow for separation */
 }
 
 /* rows inside the card */
 .card .label {
-    -fx-text-fill: #E5E9F0;
+    -fx-text-fill: #FFFFFF;
 }
 
 /* Progress bars ---------------------------------------------------------- */
@@ -86,14 +91,12 @@
     -fx-padding: 3 0 3 0;
 }
 
-.level-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #20C997, #87F3FF);
-}
-
-/* Track */
+/* Track - **Pitch black track for max contrast with fill** */
 .progress-bar > .track {
-    -fx-background-color: #26293A;
+    -fx-background-color: #000000;
     -fx-background-radius: 999;
+    -fx-border-color: #2A2A2A; /* Subtle border for definition */
+    -fx-border-width: 1;
 }
 
 /* Fill */
@@ -101,46 +104,53 @@
     -fx-background-radius: 999;
 }
 
-/* Top 3 accent colors */
+/* **Sound Level Bar:** Highly visible fill (vibrant cyan/green) */
+.level-bar > .bar {
+    -fx-background-color: linear-gradient(to right, #00FFC0, #00E6FF);
+}
+
+
+/* Top 3 accent colors - **Vibrant Purple, Gold, and Orange accents** */
 .top1-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #7C4DFF, #B388FF);
+    -fx-background-color: linear-gradient(to right, #9C27B0, #D1C4E9); /* Purple to light purple */
 }
 
 .top2-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #FFCA28, #FFE082);
+    -fx-background-color: linear-gradient(to right, #FFC107, #FFECB3); /* Gold to light gold */
 }
 
 .top3-bar > .bar {
-    -fx-background-color: linear-gradient(to right, #FF9800, #FFB74D);
+    -fx-background-color: linear-gradient(to right, #FF5722, #FFCCBC); /* Orange to light orange */
 }
 
-/* Numbers on the left (1. 2. 3.) */
+/* Numbers on the left (1. 2. 3.) - Matching vibrant text colors */
 .rank-label-1 {
-    -fx-text-fill: #B388FF;
+    -fx-text-fill: #D1C4E9; /* Light Purple */
     -fx-font-weight: bold;
 }
 .rank-label-2 {
-    -fx-text-fill: #FFE082;
+    -fx-text-fill: #FFECB3; /* Light Gold */
     -fx-font-weight: bold;
 }
 .rank-label-3 {
-    -fx-text-fill: #FFB74D;
+    -fx-text-fill: #FFCCBC; /* Light Orange */
     -fx-font-weight: bold;
 }
 
 /* TitledPane + TabPane (bottom area) ------------------------------------- */
 
 .titled-pane > .title {
-    -fx-background-color: #111320;
-    -fx-text-fill: #E5E9F0;
+    /* Dark pane header with bright text */
+    -fx-background-color: #14141E;
+    -fx-text-fill: #FFFFFF;
 }
 
 .titled-pane > .title > .text {
-    -fx-fill: #E5E9F0;
+    -fx-fill: #FFFFFF;
 }
 
 .titled-pane > .content {
-    -fx-background-color: #050814;
+    -fx-background-color: #000000;
 }
 
 /* Tabs */
@@ -149,20 +159,21 @@
 }
 
 .tab-pane .tab-header-background {
-    -fx-background-color: #111320;
+    -fx-background-color: #14141E;
 }
 
 .tab-pane .tab {
-    -fx-background-color: #111320;
+    -fx-background-color: #14141E;
     -fx-text-base-color: #B0BEC5;
 }
 
 .tab-pane .tab:selected {
-    -fx-background-color: #1C2140;
+    /* Selected tab has a purple accent background */
+    -fx-background-color: #3C2B53;
 }
 
 .tab-pane .tab-label {
-    -fx-text-fill: inherit;
+    -fx-text-fill: #FFFFFF; /* Ensure selected tab label is white */
 }
 
 /* ScrollPane background inside tabs */
@@ -175,7 +186,7 @@
 
 /* Checkboxes in lists */
 .check-box {
-    -fx-text-fill: #E5E9F0;
+    -fx-text-fill: #FFFFFF;
 }
 
 /* Settings screen specific ----------------------------------------------- */
@@ -183,49 +194,50 @@
 .settings-header-title {
     -fx-font-size: 20;
     -fx-font-weight: bold;
-    -fx-text-fill: #F3E5F5;
+    -fx-text-fill: #FFFFFF;
 }
 
 .settings-section-title {
     -fx-font-weight: bold;
-    -fx-text-fill: #90CAF9;
+    -fx-text-fill: #D1C4E9; /* Light purple section title */
 }
 
 .settings-help {
     -fx-font-size: 11;
-    -fx-text-fill: #9FA8DA;
+    -fx-text-fill: #B0B0B0; /* Light gray for help text */
 }
 
 /* Slider styling */
 .slider .track {
-    -fx-background-color: #272A3D;
+    -fx-background-color: #000000;
     -fx-background-radius: 999;
 }
 .slider .thumb {
-    -fx-background-color: #7C4DFF;
+    -fx-background-color: #7C4DFF; /* Vibrant purple thumb */
     -fx-background-radius: 999;
 }
 
 /* ChoiceBox */
 .choice-box {
-    -fx-background-color: #111320;
-    -fx-mark-color: #B388FF;
+    -fx-background-color: #14141E;
+    -fx-mark-color: #D1C4E9; /* Light purple mark */
 }
 .choice-box > .label {
-    -fx-text-fill: #ECEFF4;
+    -fx-text-fill: #FFFFFF;
 }
 
 /* Tooltips */
 .tooltip {
-    -fx-background-color: #252744;
-    -fx-text-fill: #ECEFF4;
+    -fx-background-color: #262630;
+    -fx-text-fill: #FFFFFF;
     -fx-font-size: 11;
 }
 
 .history-drawer {
-    -fx-background-color: linear-gradient(to bottom, #0D1124, #0A0E1C);
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 18, 0.35, 0, 8);
-    -fx-border-color: #2A2E45;
+    /* Deep background for the drawer */
+    -fx-background-color: linear-gradient(to bottom, #0A0A0A, #050505);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 30, 0.6, 0, 12);
+    -fx-border-color: #7C4DFF; /* Vibrant purple border */
     -fx-border-width: 0 0 0 1;
     -fx-background-radius: 12 0 0 12;
 }
@@ -233,5 +245,5 @@
 .history-title {
     -fx-font-size: 16;
     -fx-font-weight: bold;
-    -fx-text-fill: #E0E6FF;
+    -fx-text-fill: #FFFFFF;
 }

@@ -4,10 +4,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-/**
- * Legacy entry point. Prefer TapticFxApp (richer navigation),
- * but this stays for compatibility and quick runs.
- */
 public class Main extends Application {
 
     private YamnetMic yamnetMic;
@@ -39,7 +35,7 @@ public class Main extends Application {
         micThread.setDaemon(true);
         micThread.start();
 
-        controller.setStatusText("Listening… say something loud near the mic.");
+        controller.setStatusText("Listening…");
     }
 
     @Override
