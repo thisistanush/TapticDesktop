@@ -128,7 +128,8 @@ public class YamnetMic implements AutoCloseable, Runnable {
                 sumSq += v * v;
             }
             double rms = Math.sqrt(sumSq / WIN_SAMPLES); // 0..~1
-            double level = Math.min(1.0, rms * 4.0);      // amplify a bit
+            double boosted = Math.pow(rms * 16.0, 0.65); // more responsive meter
+            double level = Math.min(1.0, Math.max(0.02, boosted));
 
             float[] scores = infer(ring);
             Interpreter.onFrame(scores, LABELS, level);
