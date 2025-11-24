@@ -11,7 +11,7 @@ public final class AppConfig {
     // Global notification behavior
     public static volatile boolean playSound = true;
     public static volatile boolean flashEmergency = true;
-    public static volatile double notifyThreshold = 0.30;
+    public static volatile double notifyThreshold = 0.20;
     public static volatile String notificationSound = "System beep";
 
     // Broadcast label sets

@@ -2,9 +2,9 @@
 
 .root {
     -fx-font-family: "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial;
-    /* Ultra-deep background */
-    -fx-background-color: radial-gradient(radius 120%, #000000, #000000);
-    -fx-text-fill: #FFFFFF;
+    /* High-contrast charcoal background with soft vignette */
+    -fx-background-color: radial-gradient(radius 160%, #0B1020, #04060D);
+    -fx-text-fill: #F4F7FF;
 }
 
 /* The main BorderPane in both screens */
@@ -15,24 +15,25 @@
 /* Generic labels - **Pure White for maximum readability** */
 .label {
     -fx-font-smoothing-type: lcd;
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: #F4F7FF;
 }
 .mic-warning {
     /* High-contrast warning */
-    -fx-background-color: rgba(255, 215, 0, 0.35);
-    -fx-text-fill: #FFEB3B; /* Neon yellow */
+    -fx-background-color: rgba(255, 193, 7, 0.35);
+    -fx-text-fill: #FFD54F; /* Bright amber */
     -fx-padding: 4 8 4 8;
     -fx-background-radius: 8;
     -fx-font-size: 12;
+    -fx-font-weight: bold;
 }
 
 /* Header bar ------------------------------------------------------------- */
 
 .header-bar {
     /* Dark gray-blue header with a bright purple line */
-    -fx-background-color: #14141E;
-    -fx-border-color: #673AB7; /* Brighter purple accent line */
-    -fx-border-width: 0 0 1 0;
+    -fx-background-color: #0F172A;
+    -fx-border-color: linear-gradient(to right, #7C4DFF, #64B5F6);
+    -fx-border-width: 0 0 2 0;
 }
 
 .header-title {
@@ -43,18 +44,20 @@
 
 .header-button {
     /* Dark, distinct button with white text */
-    -fx-background-color: #262630;
-    -fx-text-fill: #FFFFFF;
+    -fx-background-color: linear-gradient(to bottom, #1C253C, #131A2B);
+    -fx-text-fill: #F4F7FF;
     -fx-font-size: 13;
+    -fx-font-weight: 600;
     -fx-background-radius: 10;
-    -fx-padding: 6 10 6 10;
+    -fx-padding: 6 12 6 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0.2, 0, 3);
 }
 
 /* Status + "now hearing" ------------------------------------------------- */
 
 .status-label {
-    -fx-font-size: 15;
-    -fx-text-fill: #90CAF9; /* Bright status blue */
+    -fx-font-size: 16;
+    -fx-text-fill: #BBDEFB; /* Bright status blue */
 }
 
 .now-caption {
@@ -75,8 +78,10 @@
     -fx-padding: 18;
     -fx-background-radius: 18;
     /* Distinct dark blue-gray background for card */
-    -fx-background-color: linear-gradient(to bottom, #11111A, #08080F);
+    -fx-background-color: linear-gradient(to bottom, #121A2C, #0B1020);
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 30, 0.6, 0, 12); /* Maximum shadow for separation */
+    -fx-border-color: rgba(255,255,255,0.08);
+    -fx-border-width: 1;
 }
 
 /* rows inside the card */
@@ -93,9 +98,9 @@
 
 /* Track - **Pitch black track for max contrast with fill** */
 .progress-bar > .track {
-    -fx-background-color: #000000;
+    -fx-background-color: #0A0F1A;
     -fx-background-radius: 999;
-    -fx-border-color: #2A2A2A; /* Subtle border for definition */
+    -fx-border-color: #2E3A52; /* Subtle border for definition */
     -fx-border-width: 1;
 }
 
@@ -107,6 +112,7 @@
 /* **Sound Level Bar:** Highly visible fill (vibrant cyan/green) */
 .level-bar > .bar {
     -fx-background-color: linear-gradient(to right, #00FFC0, #00E6FF);
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 192, 0.4), 20, 0.4, 0, 3);
 }
 
 
@@ -141,8 +147,8 @@
 
 .titled-pane > .title {
     /* Dark pane header with bright text */
-    -fx-background-color: #14141E;
-    -fx-text-fill: #FFFFFF;
+    -fx-background-color: #111827;
+    -fx-text-fill: #F4F7FF;
 }
 
 .titled-pane > .title > .text {
@@ -150,7 +156,7 @@
 }
 
 .titled-pane > .content {
-    -fx-background-color: #000000;
+    -fx-background-color: #090F1A;
 }
 
 /* Tabs */
@@ -159,17 +165,17 @@
 }
 
 .tab-pane .tab-header-background {
-    -fx-background-color: #14141E;
+    -fx-background-color: #0F172A;
 }
 
 .tab-pane .tab {
-    -fx-background-color: #14141E;
-    -fx-text-base-color: #B0BEC5;
+    -fx-background-color: #141A30;
+    -fx-text-base-color: #DCE4EF;
 }
 
 .tab-pane .tab:selected {
     /* Selected tab has a purple accent background */
-    -fx-background-color: #3C2B53;
+    -fx-background-color: linear-gradient(to bottom, #3C2B53, #2A1E3A);
 }
 
 .tab-pane .tab-label {
@@ -186,7 +192,7 @@
 
 /* Checkboxes in lists */
 .check-box {
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: #F4F7FF;
 }
 
 /* Settings screen specific ----------------------------------------------- */
@@ -194,7 +200,7 @@
 .settings-header-title {
     -fx-font-size: 20;
     -fx-font-weight: bold;
-    -fx-text-fill: #FFFFFF;
+    -fx-text-fill: #F4F7FF;
 }
 
 .settings-section-title {
@@ -204,7 +210,37 @@
 
 .settings-help {
     -fx-font-size: 11;
-    -fx-text-fill: #B0B0B0; /* Light gray for help text */
+    -fx-text-fill: #CBD5E1; /* Light gray for help text */
+}
+
+/* Inputs + lists ---------------------------------------------------------- */
+
+.text-field, .list-view, .scroll-pane, .choice-box, .slider, .tab-pane {
+    -fx-background-color: #0E1524;
+    -fx-control-inner-background: #0E1524;
+    -fx-text-fill: #F4F7FF;
+}
+
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #F4F7FF;
+}
+
+.list-cell:filled:selected, .list-cell:filled:selected:hover {
+    -fx-background-color: linear-gradient(to right, #1E293B, #2D3B52);
+    -fx-text-fill: #FFFFFF;
+}
+
+.text-field {
+    -fx-prompt-text-fill: rgba(255,255,255,0.6);
+    -fx-border-color: rgba(255,255,255,0.15);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+.button {
+    -fx-text-fill: #F4F7FF;
 }
 
 /* Slider styling */

@@ -61,7 +61,7 @@ public class SettingsController {
         }
 
         if (sensitivitySlider != null) {
-            sensitivitySlider.setMin(0.1);
+            sensitivitySlider.setMin(0.05);
             sensitivitySlider.setMax(0.9);
             sensitivitySlider.setValue(AppConfig.notifyThreshold);
             sensitivitySlider.setShowTickMarks(true);
