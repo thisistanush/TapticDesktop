@@ -133,6 +133,7 @@
                                                    promptText="Type a reply…"
                                                    HBox.hgrow="ALWAYS"/>
                                         <Button text="Send"
+                                                styleClass="cta-button"
                                                 onAction="#onCaptionSendClicked"/>
                                     </HBox>
                                 </bottom>

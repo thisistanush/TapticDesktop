@@ -25,6 +25,9 @@ public final class VoskModelManager {
     private static final String DOWNLOAD_URL =
             "https://alphacephei.com/vosk/models/" + MODEL_ZIP;
 
+    private static final String MODEL_PROP = "taptic.vosk.model";
+    private static final String MODEL_ENV = "TAPTIC_VOSK_MODEL";
+
     private static Path cachedModelDir;
 
     private VoskModelManager() {
@@ -40,6 +43,12 @@ public final class VoskModelManager {
 
         LibVosk.setLogLevel(0);
 
+        Path manualModel = resolveManualModelPath(statusReporter);
+        if (manualModel != null) {
+            cachedModelDir = manualModel;
+            return new Model(manualModel.toString());
+        }
+
         Path baseDir = Paths.get(System.getProperty("user.home"), ".taptic", "stt");
         Files.createDirectories(baseDir);
         Path modelDir = baseDir.resolve(MODEL_NAME);
@@ -51,10 +60,31 @@ public final class VoskModelManager {
         }
 
         cachedModelDir = modelDir;
-        if (statusReporter != null) {
-            statusReporter.accept("Speech model ready (offline).");
-        }
         return new Model(modelDir.toString());
+    }
+
+    private static Path resolveManualModelPath(Consumer<String> statusReporter) {
+        String manualPath = System.getProperty(MODEL_PROP);
+        if (manualPath == null || manualPath.isBlank()) {
+            manualPath = System.getenv(MODEL_ENV);
+        }
+
+        if (manualPath == null || manualPath.isBlank()) {
+            return null;
+        }
+
+        Path candidate = Paths.get(manualPath).toAbsolutePath();
+        if (Files.isDirectory(candidate)) {
+            if (statusReporter != null) {
+                statusReporter.accept("Using local speech model at " + candidate + ".");
+            }
+            return candidate;
+        }
+
+        if (statusReporter != null) {
+            statusReporter.accept("Speech model path not found: " + candidate);
+        }
+        return null;
     }
 
     private static void downloadModel(Path destination, Consumer<String> statusReporter) throws IOException {
