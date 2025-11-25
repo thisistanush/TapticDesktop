@@ -243,6 +243,36 @@
     -fx-text-fill: #F4F7FF;
 }
 
+.cta-button {
+    -fx-background-color: linear-gradient(to bottom, #7C4DFF, #4C1D95);
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: 700;
+    -fx-background-radius: 10;
+    -fx-padding: 10 16 10 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 12, 0.25, 0, 3);
+}
+.cta-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #6B3FD7, #3B166F);
+}
+
+.color-picker {
+    -fx-background-color: #1C2538;
+    -fx-text-fill: #F8FAFC;
+    -fx-border-color: rgba(255,255,255,0.18);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.color-picker > .label {
+    -fx-text-fill: #F8FAFC;
+}
+.color-picker > .arrow-button {
+    -fx-background-color: #263147;
+    -fx-text-fill: #F8FAFC;
+}
+.color-picker > .arrow-button > .arrow {
+    -fx-background-color: #E5E7EB;
+}
+
 /* Slider styling */
 .slider .track {
     -fx-background-color: #000000;

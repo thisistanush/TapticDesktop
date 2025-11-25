@@ -44,8 +44,8 @@
         </dependency>
         <dependency>
             <groupId>com.alphacephei</groupId>
-            <artifactId>vosk</artifactId>
-            <version>0.3.33</version>
+            <artifactId>vosk-platform</artifactId>
+            <version>0.3.45</version>
         </dependency>
     </dependencies>
 
