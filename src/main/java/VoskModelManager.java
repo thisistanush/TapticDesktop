@@ -1,4 +1,5 @@
 import org.vosk.LibVosk;
+import org.vosk.LogLevel;
 import org.vosk.Model;
 
 import java.io.IOException;
@@ -41,7 +42,13 @@ public final class VoskModelManager {
             return new Model(cachedModelDir.toString());
         }
 
-        LibVosk.setLogLevel(0);
+        LibVosk.setLogLevel(LogLevel.WARNINGS);
+
+        Path manualModel = resolveManualModelPath(statusReporter);
+        if (manualModel != null) {
+            cachedModelDir = manualModel;
+            return new Model(manualModel.toString());
+        }
 
         Path manualModel = resolveManualModelPath(statusReporter);
         if (manualModel != null) {
