@@ -50,6 +50,12 @@ public final class VoskModelManager {
             return new Model(manualModel.toString());
         }
 
+        Path manualModel = resolveManualModelPath(statusReporter);
+        if (manualModel != null) {
+            cachedModelDir = manualModel;
+            return new Model(manualModel.toString());
+        }
+
         Path baseDir = Paths.get(System.getProperty("user.home"), ".taptic", "stt");
         Files.createDirectories(baseDir);
         Path modelDir = baseDir.resolve(MODEL_NAME);
