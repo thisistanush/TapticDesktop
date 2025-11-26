@@ -64,6 +64,13 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>${main.class}</mainClass>
+                    <!--
+                        Force classpath mode so dependencies without valid module names
+                        (e.g., Sphinx 5prealpha) are kept on the runtime path instead of
+                        being dropped from the module-path, which prevents
+                        ClassNotFoundException when launching with `javafx:run`.
+                    -->
+                    <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
 
