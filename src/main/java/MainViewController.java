@@ -93,6 +93,7 @@ public class MainViewController {
                 private final HBox container = new HBox(8, textLabel, replayButton);
 
                 {
+                    replayButton.setStyle("-fx-text-fill: black;");
                     replayButton.setOnAction(e -> {
                         CaptionMessage msg = getItem();
                         if (msg != null) {
