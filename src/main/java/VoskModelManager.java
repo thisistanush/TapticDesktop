@@ -21,11 +21,13 @@ import java.util.zip.ZipInputStream;
  */
 public final class VoskModelManager {
 
+    // Compact English model keeps download small while still accurate enough for captions
     private static final String MODEL_NAME = "vosk-model-small-en-us-0.15";
     private static final String MODEL_ZIP = MODEL_NAME + ".zip";
     private static final String DOWNLOAD_URL =
             "https://alphacephei.com/vosk/models/" + MODEL_ZIP;
 
+    // Optional overrides for providing your own unpacked model directory
     private static final String MODEL_PROP = "taptic.vosk.model";
     private static final String MODEL_ENV = "TAPTIC_VOSK_MODEL";
 
@@ -36,6 +38,7 @@ public final class VoskModelManager {
 
     /**
      * Returns a ready-to-use model, downloading it if needed.
+     * The steps are kept explicit and linear so it's easy to follow.
      */
     public static synchronized Model loadModel(Consumer<String> statusReporter) throws IOException {
         if (cachedModelDir != null && Files.isDirectory(cachedModelDir)) {
@@ -44,12 +47,7 @@ public final class VoskModelManager {
 
         LibVosk.setLogLevel(LogLevel.WARNINGS);
 
-        Path manualModel = resolveManualModelPath(statusReporter);
-        if (manualModel != null) {
-            cachedModelDir = manualModel;
-            return new Model(manualModel.toString());
-        }
-
+        // Allow power-users to point at a model they already have on disk.
         Path manualModel = resolveManualModelPath(statusReporter);
         if (manualModel != null) {
             cachedModelDir = manualModel;
@@ -60,13 +58,17 @@ public final class VoskModelManager {
         Files.createDirectories(baseDir);
         Path modelDir = baseDir.resolve(MODEL_NAME);
 
+        // Download + unzip only if the folder doesn't already exist.
         if (!Files.isDirectory(modelDir)) {
             Path zipPath = baseDir.resolve(MODEL_ZIP);
+            reportStatus(statusReporter, "Downloading offline speech model…");
             downloadModel(zipPath, statusReporter);
+            reportStatus(statusReporter, "Download complete, unpacking model…");
             unzip(zipPath, baseDir, statusReporter);
         }
 
         cachedModelDir = modelDir;
+        reportStatus(statusReporter, "Speech model ready.");
         return new Model(modelDir.toString());
     }
 
@@ -103,6 +105,11 @@ public final class VoskModelManager {
         conn.setRequestProperty("User-Agent", "TapticDesktop/1.0");
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
+
+        int response = conn.getResponseCode();
+        if (response >= 400) {
+            throw new IOException("Model download failed with HTTP status " + response);
+        }
 
         int length = conn.getContentLength();
         try (InputStream in = conn.getInputStream();
@@ -146,6 +153,12 @@ public final class VoskModelManager {
         }
         if (statusReporter != null) {
             statusReporter.accept("Speech model unpacked.");
+        }
+    }
+
+    private static void reportStatus(Consumer<String> reporter, String message) {
+        if (reporter != null && message != null && !message.isBlank()) {
+            reporter.accept(message);
         }
     }
 }

@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.alphacephei</groupId>
-            <artifactId>vosk-platform</artifactId>
+            <artifactId>vosk</artifactId>
             <version>0.3.45</version>
         </dependency>
     </dependencies>

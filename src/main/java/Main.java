@@ -12,6 +12,8 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        // Load the main UI from FXML. Keeping this in one place makes the
+        // startup sequence easy to follow.
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
         Parent root = loader.load();
         MainViewController controller = loader.getController();
@@ -22,12 +24,15 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
+        // Networking: the app both sends and listens for UDP broadcasts so
+        // multiple machines can share detections on the same LAN.
         BroadcastSender sender = new BroadcastSender(PORT);
         broadcastListener = new BroadcastListener(PORT);
         Thread listenerThread = new Thread(broadcastListener, "BroadcastListener");
         listenerThread.setDaemon(true);
         listenerThread.start();
 
+        // Audio classification + captioning
         yamnetMic = new YamnetMic();
         Interpreter.init(sender, controller, YamnetMic.getLabels());
 

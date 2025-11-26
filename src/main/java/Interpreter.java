@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Glue between the audio model (Yamnet), the UI, and broadcasting.
+ * Most methods are small so readers can skim the flow from onFrame → maybeNotify.
+ */
 public final class Interpreter {
 
     private static BroadcastSender sender;
@@ -67,7 +71,8 @@ public final class Interpreter {
             return;
         }
 
-        // Find top-3 indices by raw score (defensive, avoids out of bounds)
+        // Find top-3 indices by raw score. A tiny hand-written loop keeps
+        // dependencies low and is easy to trace with a debugger.
         int best1 = 0, best2 = 1, best3 = 2;
         for (int i = 0; i < n; i++) {
             float v = scores[i];
