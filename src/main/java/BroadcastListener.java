@@ -6,6 +6,10 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Listens for UDP broadcast messages from other Taptic Desktop instances.
+ * Kept intentionally small: read packet → ignore self → hand to Interpreter.
+ */
 public class BroadcastListener implements Closeable, Runnable {
 
     private final int port;
@@ -30,6 +34,7 @@ public class BroadcastListener implements Closeable, Runnable {
         socket.setReuseAddress(true);
         byte[] buf = new byte[2048];
 
+        // Simple forever loop: block for a packet, decode, forward.
         while (running) {
             try {
                 DatagramPacket pkt = new DatagramPacket(buf, buf.length);

@@ -8,6 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Tiny helper that sends a UDP broadcast with the detected label.
+ * Keeping it as a standalone class keeps Interpreter short.
+ */
 public final class BroadcastSender {
 
     private final int port;
