@@ -182,19 +182,7 @@ public final class Interpreter {
      * A rough heuristic: treat fire/smoke/siren/alarm/glass breaking as emergencies.
      */
     static boolean isEmergency(String label) {
-        if (label == null) return false;
-        String s = label.toLowerCase();
-        return s.contains("fire")
-                || s.contains("smoke")
-                || s.contains("siren")
-                || s.contains("alarm")
-                || s.contains("glass")
-                || s.contains("gunshot")
-                || s.contains("explosion")
-                || s.contains("emergency")
-                || s.contains("screaming")
-                || s.contains("crying")
-                || s.contains("baby");
+        return AppConfig.isEmergencyLabel(label);
     }
 
     /**
