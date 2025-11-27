@@ -28,9 +28,6 @@ public class SettingsController {
     @FXML private Slider sensitivitySlider;
     @FXML private ChoiceBox<String> notificationSoundChoiceBox;
     @FXML private ChoiceBox<String> emergencySoundChoiceBox;
-    @FXML private ChoiceBox<String> emergencyLabelChoiceBox;
-    @FXML private Button addEmergencyLabelButton;
-    @FXML private FlowPane emergencyLabelChips;
 
     @FXML private Label soundHelpLabel;
     @FXML private Label flashHelpLabel;

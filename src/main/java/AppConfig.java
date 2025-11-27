@@ -15,10 +15,6 @@ public final class AppConfig {
     public static volatile String notificationSound = "System beep";
     public static volatile String emergencyNotificationSound = "Alarm pulse";
 
-    // User-selected emergency labels
-    private static final Set<String> emergencyLabels =
-            Collections.synchronizedSet(new HashSet<>());
-
     // Broadcast label sets
     private static final Set<String> broadcastSendLabels =
             Collections.synchronizedSet(new HashSet<>());
