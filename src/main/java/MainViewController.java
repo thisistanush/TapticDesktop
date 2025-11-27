@@ -365,6 +365,13 @@ public class MainViewController {
             }
 
             showMacNotification("This Mac", label, score);
+            NotificationPopup.show(
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getPrimaryStage() : null,
+                    "Taptic Desktop",
+                    text,
+                    color,
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null
+            );
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();
@@ -405,6 +412,13 @@ public class MainViewController {
             }
 
             showMacNotification("Remote: " + source, label, score);
+            NotificationPopup.show(
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getPrimaryStage() : null,
+                    "Remote: " + source,
+                    text,
+                    color,
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null
+            );
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();

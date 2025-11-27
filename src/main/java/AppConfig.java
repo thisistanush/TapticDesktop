@@ -13,9 +13,6 @@ public final class AppConfig {
     public static volatile String notificationSound = "System beep";
     public static volatile String emergencyNotificationSound = "Alarm pulse";
 
-    // User-selected emergency labels
-    private static final List<String> emergencyLabels = new ArrayList<>();
-
     // Broadcast label sets
     private static final List<String> broadcastSendLabels = new ArrayList<>();
     private static final List<String> broadcastListenLabels = new ArrayList<>();
@@ -87,6 +84,70 @@ public final class AppConfig {
                 || s.contains("baby");
     }
 
+    private static String normalizeLabel(String label) {
+        if (label == null) return null;
+        String trimmed = label.trim();
+        if (trimmed.isEmpty()) return null;
+        return trimmed.toLowerCase();
+    }
+
+    public static void seedEmergencyLabel(String label, boolean emergency) {
+        if (!emergency) return; // only seed positives
+        String key = normalizeLabel(label);
+        if (key != null) {
+            emergencyLabels.add(key);
+        }
+    }
+
+    public static void setEmergencyLabel(String label, boolean emergency) {
+        String key = normalizeLabel(label);
+        if (key == null) return;
+        if (emergency) {
+            emergencyLabels.add(key);
+        } else {
+            emergencyLabels.remove(key);
+        }
+    }
+
+    public static boolean isEmergencyLabel(String label) {
+        String key = normalizeLabel(label);
+        if (key == null) return false;
+        if (emergencyLabels.contains(key)) {
+            return true;
+        }
+
+        if (isEmergencyHeuristic(key)) {
+            emergencyLabels.add(key); // seed so future checks stay consistent
+            return true;
+        }
+        return false;
+    }
+
+    public static Set<String> getEmergencyLabels() {
+        return Collections.unmodifiableSet(new HashSet<>(emergencyLabels));
+    }
+
+    public static boolean isEmergencyHeuristic(String label) {
+        String key = normalizeLabel(label);
+        if (key == null) return false;
+        return isEmergencyHeuristicNormalized(key);
+    }
+
+    private static boolean isEmergencyHeuristicNormalized(String normalizedLabel) {
+        String s = normalizedLabel.toLowerCase();
+        return s.contains("fire")
+                || s.contains("smoke")
+                || s.contains("siren")
+                || s.contains("alarm")
+                || s.contains("glass")
+                || s.contains("gunshot")
+                || s.contains("explosion")
+                || s.contains("emergency")
+                || s.contains("screaming")
+                || s.contains("crying")
+                || s.contains("baby");
+    }
+
     public static void setBroadcastSendEnabled(String label, boolean enabled) {
         if (label == null) return;
         if (enabled) {
@@ -119,28 +180,15 @@ public final class AppConfig {
         if (label == null || cssColor == null || cssColor.isEmpty()) return;
         String key = normalizeLabel(label);
         if (key != null) {
-            boolean updated = false;
-            for (LabelColor lc : notificationColors) {
-                if (lc.label.equals(key)) {
-                    lc.cssColor = cssColor;
-                    updated = true;
-                    break;
-                }
-            }
-            if (!updated) {
-                notificationColors.add(new LabelColor(key, cssColor));
-            }
+            notificationColors.put(key, cssColor);
         }
     }
 
     public static String getNotificationColor(String label) {
         String key = normalizeLabel(label);
         if (key == null) return "#8AB4FF";
-        for (LabelColor lc : notificationColors) {
-            if (lc.label.equals(key)) {
-                return lc.cssColor;
-            }
-        }
+        String c = notificationColors.get(key);
+        if (c != null) return c;
 
         // Default: emergencies are red, others blue
         if (Interpreter.isEmergency(label)) {
