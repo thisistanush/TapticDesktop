@@ -72,38 +72,55 @@ public class SttService implements AutoCloseable, Runnable {
      */
     @Override
     public void run() {
-        try {
-            recognizer = buildRecognizer();
-            recognizer.startRecognition(true);
-            postStatus("System: Listening… speak into your microphone.");
+        while (running) {
+            try {
+                recognizer = buildRecognizer();
+                recognizer.startRecognition(true);
+                postStatus("System: Listening… speak into your microphone.");
 
-            SpeechResult result;
-            while (running && (result = recognizer.getResult()) != null) {
-                String text = result.getHypothesis();
-                if (text != null) {
-                    text = text.trim();
+                while (running) {
+                    SpeechResult result = recognizer.getResult();
+                    if (!running) {
+                        break;
+                    }
+                    if (result == null) {
+                        try {
+                            Thread.sleep(30);
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
+                    }
+                    String text = result.getHypothesis();
+                    if (text != null) {
+                        text = text.trim();
+                    }
+                    if (text != null && !text.isEmpty() && controller != null) {
+                        controller.pushCaptionText(text);
+                    }
                 }
-                if (text != null && !text.isEmpty() && controller != null) {
-                    controller.pushCaptionText(text);
-                }
-            }
-        } catch (IOException e) {
-            postStatus("System: Speech recognition error (IO): " + e.getMessage());
-        } catch (Throwable t) {
-            // Catch anything else so the thread does not silently die.
-            postStatus("System: Speech recognition crashed: " + t.toString());
-        } finally {
-            // Clean up Sphinx
-            if (recognizer != null) {
+            } catch (IOException e) {
+                postStatus("System: Speech recognition error (IO): " + e.getMessage());
+                break;
+            } catch (Throwable t) {
+                // Catch anything else so the thread does not silently die; retry if still running.
+                postStatus("System: Speech recognition crashed: " + t.toString());
                 try {
-                    recognizer.stopRecognition();
-                } catch (Exception ignored) {
+                    Thread.sleep(200);
+                } catch (InterruptedException ignored) {
                 }
+            } finally {
+                // Clean up Sphinx
+                if (recognizer != null) {
+                    try {
+                        recognizer.stopRecognition();
+                    } catch (Exception ignored) {
+                    }
+                }
+                recognizer = null;
             }
-            recognizer = null;
-            running = false;
-            postStatus("System: Speech recognition stopped.");
         }
+        running = false;
+        postStatus("System: Speech recognition stopped.");
     }
 
     /**

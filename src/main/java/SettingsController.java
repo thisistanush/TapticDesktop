@@ -1,11 +1,13 @@
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -25,6 +27,10 @@ public class SettingsController {
     @FXML private CheckBox flashCheckBox;
     @FXML private Slider sensitivitySlider;
     @FXML private ChoiceBox<String> notificationSoundChoiceBox;
+    @FXML private ChoiceBox<String> emergencySoundChoiceBox;
+    @FXML private ChoiceBox<String> emergencyLabelChoiceBox;
+    @FXML private Button addEmergencyLabelButton;
+    @FXML private FlowPane emergencyLabelChips;
 
     @FXML private Label soundHelpLabel;
     @FXML private Label flashHelpLabel;
@@ -88,6 +94,22 @@ public class SettingsController {
                     });
         }
 
+        if (emergencySoundChoiceBox != null) {
+            emergencySoundChoiceBox.getItems().addAll(
+                    "Alarm pulse",
+                    "Rapid beeps",
+                    "Double beep",
+                    "System beep"
+            );
+            emergencySoundChoiceBox.setValue(AppConfig.emergencyNotificationSound);
+            emergencySoundChoiceBox.getSelectionModel().selectedItemProperty()
+                    .addListener((obs, old, val) -> {
+                        if (val != null) {
+                            AppConfig.emergencyNotificationSound = val;
+                        }
+                    });
+        }
+
         if (soundHelpLabel != null) {
             soundHelpLabel.setText(
                     "Choose whether Taptic should play a sound when it sends you a notification."
@@ -95,7 +117,7 @@ public class SettingsController {
         }
         if (flashHelpLabel != null) {
             flashHelpLabel.setText(
-                    "Emergency sounds (fire alarm, glass breaking, gunshot, etc.) can flash the screen red so you notice them visually."
+                    "Emergency sounds (fire alarm, glass breaking, gunshot, etc.) flash the whole screen bright red for 10 seconds."
             );
         }
         if (sensitivityHelpLabel != null) {
@@ -127,7 +149,8 @@ public class SettingsController {
         interesting.sort(String.CASE_INSENSITIVE_ORDER);
 
         Platform.runLater(() -> {
-            if (broadcastSendBox == null || broadcastListenBox == null || notificationColorBox == null) {
+            if (broadcastSendBox == null || broadcastListenBox == null || notificationColorBox == null
+                    || emergencyLabelChoiceBox == null || emergencyLabelChips == null) {
                 // If this hits, FXML isn't wired correctly.
                 System.err.println("SettingsController: one of the VBox fields is null. Check fx:id in SettingsView.fxml.");
                 return;
@@ -136,11 +159,15 @@ public class SettingsController {
             broadcastSendBox.getChildren().clear();
             broadcastListenBox.getChildren().clear();
             notificationColorBox.getChildren().clear();
+            emergencyLabelChips.getChildren().clear();
 
             broadcastSendMap.clear();
             broadcastListenMap.clear();
 
             for (String label : interesting) {
+                boolean emergencyDefault = AppConfig.isEmergencyHeuristic(label);
+                AppConfig.seedEmergencyLabel(label, emergencyDefault);
+
                 // Broadcast send
                 CheckBox sendCb = new CheckBox(label);
                 sendCb.setSelected(true);
@@ -191,7 +218,44 @@ public class SettingsController {
                 row.getChildren().addAll(nameLabel, picker);
                 notificationColorBox.getChildren().add(row);
             }
+
+            emergencyLabelChoiceBox.getItems().setAll(interesting);
+            if (!interesting.isEmpty()) {
+                emergencyLabelChoiceBox.setValue(interesting.get(0));
+            }
+
+            refreshEmergencyChips();
         });
+    }
+
+    @FXML
+    private void onAddEmergencyLabelClicked() {
+        if (emergencyLabelChoiceBox == null || emergencyLabelChips == null) return;
+        String selected = emergencyLabelChoiceBox.getSelectionModel().getSelectedItem();
+        if (selected == null || selected.isBlank()) return;
+        AppConfig.setEmergencyLabel(selected, true);
+        refreshEmergencyChips();
+    }
+
+    private void refreshEmergencyChips() {
+        emergencyLabelChips.getChildren().clear();
+        AppConfig.getEmergencyLabels().stream()
+                .sorted(String::compareToIgnoreCase)
+                .forEach(label -> emergencyLabelChips.getChildren().add(makeChip(label)));
+    }
+
+    private HBox makeChip(String label) {
+        HBox chip = new HBox(6);
+        chip.getStyleClass().add("emergency-chip");
+        Label name = new Label(label);
+        Button remove = new Button("✕");
+        remove.getStyleClass().add("chip-remove-button");
+        remove.setOnAction(e -> {
+            AppConfig.setEmergencyLabel(label, false);
+            refreshEmergencyChips();
+        });
+        chip.getChildren().addAll(name, remove);
+        return chip;
     }
 
     private String toCssColor(Color c) {

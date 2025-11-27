@@ -8,6 +8,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
@@ -15,10 +17,14 @@ import javax.sound.sampled.*;
 import java.util.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainViewController {
 
+    @FXML private StackPane rootStack;
     @FXML private BorderPane rootPane;
+    @FXML private Pane flashOverlay;
 
     @FXML private Label statusLabel;
     @FXML private Label nowLabel;
@@ -57,6 +63,14 @@ public class MainViewController {
 
     private Timeline flashTimeline;
 
+    private final ExecutorService speechExecutor = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "TTS");
+        t.setDaemon(true);
+        return t;
+    });
+    private final Object sayLock = new Object();
+    private Process activeSayProcess;
+
     // STT service (Google Cloud Speech)
     private SttService sttService;
 
@@ -81,6 +95,11 @@ public class MainViewController {
 
         if (captionMicToggle != null) {
             captionMicToggle.setText("Start mic");
+        }
+
+        if (flashOverlay != null && rootStack != null) {
+            flashOverlay.prefWidthProperty().bind(rootStack.widthProperty());
+            flashOverlay.prefHeightProperty().bind(rootStack.heightProperty());
         }
 
         // Caption list with replay button for "You" messages
@@ -331,14 +350,18 @@ public class MainViewController {
         Platform.runLater(() -> {
             int pct = (int) Math.round(score * 100.0);
             String text = String.format("THIS MAC • %s (%d%%)", label, pct);
+            String color = AppConfig.getNotificationColor(label);
             if (statusLabel != null) {
                 statusLabel.setText(text);
-                String color = AppConfig.getNotificationColor(label);
                 statusLabel.setStyle("-fx-text-fill: " + color + ";");
             }
 
             if (AppConfig.playSound) {
-                NotificationSoundPlayer.play(AppConfig.notificationSound);
+                if (emergency) {
+                    NotificationSoundPlayer.playEmergency(AppConfig.emergencyNotificationSound);
+                } else {
+                    NotificationSoundPlayer.play(AppConfig.notificationSound);
+                }
             }
 
             showMacNotification("This Mac", label, score);
@@ -360,9 +383,9 @@ public class MainViewController {
         Platform.runLater(() -> {
             String source = (host == null || host.isBlank()) ? "Remote device" : host;
             String text = String.format("REMOTE (%s) • %s", source, label);
+            String color = AppConfig.getNotificationColor(label);
             if (statusLabel != null) {
                 statusLabel.setText(text);
-                String color = AppConfig.getNotificationColor(label);
                 statusLabel.setStyle("-fx-text-fill: " + color + ";");
             }
             if (nowLabel != null) {
@@ -374,7 +397,11 @@ public class MainViewController {
             updateRow(top3Label, top3Bar, null, 0.0);
 
             if (AppConfig.playSound) {
-                NotificationSoundPlayer.play(AppConfig.notificationSound);
+                if (emergency) {
+                    NotificationSoundPlayer.playEmergency(AppConfig.emergencyNotificationSound);
+                } else {
+                    NotificationSoundPlayer.play(AppConfig.notificationSound);
+                }
             }
 
             showMacNotification("Remote: " + source, label, score);
@@ -386,7 +413,7 @@ public class MainViewController {
     }
 
     private void showMacNotification(String prefix, String label, double score) {
-        String title = "Taptic Desktop";
+        String title = "Taptic Desktop " + colorEmoji(AppConfig.getNotificationColor(label));
         int pct = (int) Math.round(score * 100.0);
         String message = prefix + ": " + label + " (" + pct + "%)";
 
@@ -398,25 +425,51 @@ public class MainViewController {
         }
     }
 
+    private String colorEmoji(String cssColor) {
+        if (cssColor == null) return "";
+        String c = cssColor.toUpperCase(Locale.ROOT);
+        if (c.startsWith("#")) {
+            try {
+                int r = Integer.parseInt(c.substring(1, 3), 16);
+                int g = Integer.parseInt(c.substring(3, 5), 16);
+                int b = Integer.parseInt(c.substring(5, 7), 16);
+                if (r > g + b) return "🔴";
+                if (g > r + b) return "🟢";
+                if (b > r + g) return "🔵";
+            } catch (Exception ignored) {
+            }
+        }
+        return "";
+    }
+
     private String escapeForAppleScript(String s) {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private void flashEmergency() {
+        if (flashOverlay == null || rootStack == null) return;
         if (flashTimeline != null) {
             flashTimeline.stop();
         }
+        flashOverlay.setOpacity(0);
+        flashOverlay.setVisible(true);
+        flashOverlay.setManaged(true);
+        flashOverlay.toFront();
+
         flashTimeline = new Timeline();
-        int steps = 16;
-        for (int i = 0; i <= steps; i++) {
+        int flashes = 25; // ~10 seconds at 400ms per toggle
+        for (int i = 0; i <= flashes; i++) {
             boolean on = (i % 2 == 0);
             flashTimeline.getKeyFrames().add(new KeyFrame(
-                    Duration.millis(i * 300),
-                    e -> rootPane.setStyle(on
-                            ? "-fx-background-color: #FFCDD2;"
-                            : "-fx-background-color: #050814;")));
+                    Duration.millis(i * 400L),
+                    new KeyValue(flashOverlay.opacityProperty(), on ? 0.9 : 0.0)));
         }
-        flashTimeline.play();
+        flashTimeline.setOnFinished(e -> {
+            flashOverlay.setVisible(false);
+            flashOverlay.setManaged(false);
+            flashOverlay.setOpacity(0);
+        });
+        flashTimeline.playFromStart();
     }
 
     /** Called from Interpreter when mic is missing / broken. */
@@ -517,19 +570,19 @@ public class MainViewController {
     }
 
     private void speakText(String text) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
+        speechExecutor.submit(() -> {
+            synchronized (sayLock) {
+                if (activeSayProcess != null && activeSayProcess.isAlive()) {
+                    activeSayProcess.destroy();
+                }
                 try {
-                    new ProcessBuilder("say", "-r", "240", text).start();
+                    activeSayProcess = new ProcessBuilder("say", "-r", "240", text).start();
                 } catch (Exception ignored) {
                     // Ignore errors from the 'say' command.
+                    activeSayProcess = null;
                 }
             }
-        }, "TTS");
-
-        t.setDaemon(true); // So the app can exit cleanly.
-        t.start();
+        });
     }
 
 

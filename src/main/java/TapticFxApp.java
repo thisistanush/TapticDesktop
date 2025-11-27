@@ -3,6 +3,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -22,6 +23,7 @@ public class TapticFxApp extends Application {
     private SettingsController settingsController;
     private Stage bubbleStage;
     private Label bubbleLabel;
+    private Image appIcon;
 
     private YamnetMic yamnetMic;
     private BroadcastListener broadcastListener;
@@ -65,6 +67,11 @@ public class TapticFxApp extends Application {
 
         mainScene = new Scene(mainRoot, 900, 600);
         applyCss(mainScene);
+
+        loadAppIcon();
+        if (appIcon != null) {
+            stage.getIcons().add(appIcon);
+        }
 
         stage.setTitle("Taptic Desktop");
         stage.setScene(mainScene);
@@ -250,6 +257,9 @@ public class TapticFxApp extends Application {
         bubbleStage.setScene(scene);
         bubbleStage.setWidth(240);
         bubbleStage.setHeight(80);
+        if (appIcon != null) {
+            bubbleStage.getIcons().add(appIcon);
+        }
         hideBubble();
     }
 
@@ -267,5 +277,19 @@ public class TapticFxApp extends Application {
         if (bubbleStage != null && bubbleStage.isShowing()) {
             bubbleStage.hide();
         }
+    }
+
+    private void loadAppIcon() {
+        try {
+            URL iconUrl = getClass().getResource("/icons/app-icon.png");
+            if (iconUrl != null) {
+                appIcon = new Image(iconUrl.toExternalForm());
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    public Image getAppIcon() {
+        return appIcon;
     }
 }

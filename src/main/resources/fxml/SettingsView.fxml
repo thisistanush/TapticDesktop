@@ -7,7 +7,8 @@
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:id="rootPane"
-            fx:controller="SettingsController">
+            fx:controller="SettingsController"
+            styleClass="app-surface">
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT"
@@ -51,6 +52,23 @@
                                     <Label text="Notification sound:"/>
                                     <ChoiceBox fx:id="notificationSoundChoiceBox" prefWidth="180"/>
                                 </HBox>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Emergency sound:"/>
+                                    <ChoiceBox fx:id="emergencySoundChoiceBox" prefWidth="200"/>
+                                </HBox>
+
+                                <Label text="Emergency sounds" styleClass="settings-section-title"/>
+                                <Label text="Pick which detected sounds count as emergencies. These will play the emergency sound, flash the screen, and be marked in history."
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <ChoiceBox fx:id="emergencyLabelChoiceBox" prefWidth="240"/>
+                                    <Button fx:id="addEmergencyLabelButton"
+                                            text="Add"
+                                            onAction="#onAddEmergencyLabelClicked"/>
+                                </HBox>
+                                <FlowPane fx:id="emergencyLabelChips" hgap="8" vgap="8" prefWrapLength="320"/>
 
                                 <CheckBox fx:id="flashCheckBox"
                                           text="Flash screen red for emergency sounds"/>
