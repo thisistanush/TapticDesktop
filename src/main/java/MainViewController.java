@@ -427,7 +427,7 @@ public class MainViewController {
     }
 
     private void showMacNotification(String prefix, String label, double score) {
-        String title = "Taptic Desktop";
+        String title = "Taptic Desktop " + colorEmoji(AppConfig.getNotificationColor(label));
         int pct = (int) Math.round(score * 100.0);
         String message = prefix + ": " + label + " (" + pct + "%)";
 
@@ -437,6 +437,23 @@ public class MainViewController {
             new ProcessBuilder("osascript", "-e", script).start();
         } catch (Exception ignored) {
         }
+    }
+
+    private String colorEmoji(String cssColor) {
+        if (cssColor == null) return "";
+        String c = cssColor.toUpperCase(Locale.ROOT);
+        if (c.startsWith("#")) {
+            try {
+                int r = Integer.parseInt(c.substring(1, 3), 16);
+                int g = Integer.parseInt(c.substring(3, 5), 16);
+                int b = Integer.parseInt(c.substring(5, 7), 16);
+                if (r > g + b) return "🔴";
+                if (g > r + b) return "🟢";
+                if (b > r + g) return "🔵";
+            } catch (Exception ignored) {
+            }
+        }
+        return "";
     }
 
     private String escapeForAppleScript(String s) {

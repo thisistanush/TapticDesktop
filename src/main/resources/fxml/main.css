@@ -259,6 +259,25 @@
     -fx-background-color: linear-gradient(to bottom, #6B3FD7, #3B166F);
 }
 
+.emergency-chip {
+    -fx-background-color: rgba(255, 82, 82, 0.12);
+    -fx-border-color: #FF5252;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-padding: 6 10;
+    -fx-alignment: center;
+}
+
+.chip-remove-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FF8585;
+    -fx-padding: 2 6;
+}
+
+.chip-remove-button:hover {
+    -fx-background-color: rgba(255, 82, 82, 0.2);
+}
+
 .color-picker {
     -fx-background-color: #1C2538;
     -fx-text-fill: #F8FAFC;
