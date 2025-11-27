@@ -13,6 +13,7 @@ public final class AppConfig {
     public static volatile boolean flashEmergency = true;
     public static volatile double notifyThreshold = 0.20;
     public static volatile String notificationSound = "System beep";
+    public static volatile String emergencyNotificationSound = "Alarm pulse";
 
     // Broadcast label sets
     private static final Set<String> broadcastSendLabels =

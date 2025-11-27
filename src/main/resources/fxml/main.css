@@ -7,6 +7,10 @@
     -fx-text-fill: #F4F7FF;
 }
 
+.app-surface {
+    -fx-background-color: radial-gradient(radius 160%, #0B1020, #04060D);
+}
+
 /* The main BorderPane in both screens */
 #rootPane {
     -fx-background-color: transparent;

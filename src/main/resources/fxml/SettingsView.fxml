@@ -7,7 +7,8 @@
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:id="rootPane"
-            fx:controller="SettingsController">
+            fx:controller="SettingsController"
+            styleClass="app-surface">
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT"
@@ -50,6 +51,11 @@
                                 <HBox spacing="8" alignment="CENTER_LEFT">
                                     <Label text="Notification sound:"/>
                                     <ChoiceBox fx:id="notificationSoundChoiceBox" prefWidth="180"/>
+                                </HBox>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Emergency sound:"/>
+                                    <ChoiceBox fx:id="emergencySoundChoiceBox" prefWidth="200"/>
                                 </HBox>
 
                                 <CheckBox fx:id="flashCheckBox"
