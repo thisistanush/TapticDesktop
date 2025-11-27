@@ -25,6 +25,7 @@ public class SettingsController {
     @FXML private CheckBox flashCheckBox;
     @FXML private Slider sensitivitySlider;
     @FXML private ChoiceBox<String> notificationSoundChoiceBox;
+    @FXML private ChoiceBox<String> emergencySoundChoiceBox;
 
     @FXML private Label soundHelpLabel;
     @FXML private Label flashHelpLabel;
@@ -88,6 +89,22 @@ public class SettingsController {
                     });
         }
 
+        if (emergencySoundChoiceBox != null) {
+            emergencySoundChoiceBox.getItems().addAll(
+                    "Alarm pulse",
+                    "Rapid beeps",
+                    "Double beep",
+                    "System beep"
+            );
+            emergencySoundChoiceBox.setValue(AppConfig.emergencyNotificationSound);
+            emergencySoundChoiceBox.getSelectionModel().selectedItemProperty()
+                    .addListener((obs, old, val) -> {
+                        if (val != null) {
+                            AppConfig.emergencyNotificationSound = val;
+                        }
+                    });
+        }
+
         if (soundHelpLabel != null) {
             soundHelpLabel.setText(
                     "Choose whether Taptic should play a sound when it sends you a notification."
@@ -95,7 +112,7 @@ public class SettingsController {
         }
         if (flashHelpLabel != null) {
             flashHelpLabel.setText(
-                    "Emergency sounds (fire alarm, glass breaking, gunshot, etc.) can flash the screen red so you notice them visually."
+                    "Emergency sounds (fire alarm, glass breaking, gunshot, etc.) flash the whole screen bright red for 10 seconds."
             );
         }
         if (sensitivityHelpLabel != null) {
