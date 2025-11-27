@@ -8,25 +8,31 @@
     <version>1.0.0</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <!-- You can use 17 here if you want, but 11 is OK too -->
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+
         <javafx.version>17.0.10</javafx.version>
+        <!-- This must be your JavaFX Application subclass -->
         <main.class>TapticFxApp</main.class>
     </properties>
 
     <dependencies>
+        <!-- TensorFlow Lite (already working for you) -->
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>tensorflow-lite-platform</artifactId>
             <version>2.19.0-1.5.12</version>
         </dependency>
 
+        <!-- JSON -->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20240303</version>
         </dependency>
 
+        <!-- JavaFX (controls, FXML, graphics) -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -43,6 +49,7 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <!-- 🔊 Sphinx STT: UNCOMMENTED so Maven actually pulls them -->
         <dependency>
             <groupId>net.sf.phat</groupId>
             <artifactId>sphinx4-core</artifactId>
@@ -58,23 +65,22 @@
 
     <build>
         <plugins>
+            <!-- JavaFX plugin: runs the app and sets up module-path -->
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>${main.class}</mainClass>
-                    <!--
-                        Force classpath mode so dependencies without valid module names
-                        (e.g., Sphinx 5prealpha) are kept on the runtime path instead of
-                        being dropped from the module-path, which prevents
-                        ClassNotFoundException when launching with `javafx:run`.
-                    -->
-                    <useModulePath>false</useModulePath>
+                    <!-- Your JavaFX Application subclass -->
+                    <mainClass>TapticFxApp</mainClass>
+
+                    <!-- ⭐ KEY LINE: keep "bad" modules (Sphinx) on the CLASSPATH
+                         instead of dropping them -->
+                    <includePathExceptionsInClasspath>true</includePathExceptionsInClasspath>
                 </configuration>
             </plugin>
 
-            <!-- Package all runtime dependencies (including Sphinx) into a single, runnable JAR -->
+            <!-- Optional: shaded JAR for packaging (fine to keep) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -98,4 +104,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

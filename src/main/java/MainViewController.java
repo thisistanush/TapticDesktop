@@ -8,7 +8,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
@@ -16,7 +15,6 @@ import javax.sound.sampled.*;
 import java.util.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.function.Consumer;
 
 public class MainViewController {
 
@@ -149,7 +147,7 @@ public class MainViewController {
             historyTransition = new TranslateTransition(Duration.millis(240), historyDrawer);
         }
 
-        sttService = new SttService(this::pushCaptionText, this::postCaptionSystemMessage);
+        sttService = new SttService(this);
     }
 
     // ---------------------------------------------------------------------
@@ -519,13 +517,22 @@ public class MainViewController {
     }
 
     private void speakText(String text) {
-        new Thread(() -> {
-            try {
-                new ProcessBuilder("say", "-r", "240", text).start();
-            } catch (Exception ignored) {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    new ProcessBuilder("say", "-r", "240", text).start();
+                } catch (Exception ignored) {
+                    // Ignore errors from the 'say' command.
+                }
             }
-        }, "TTS").start();
+        }, "TTS");
+
+        t.setDaemon(true); // So the app can exit cleanly.
+        t.start();
     }
+
+
 
     @FXML
     private void onCaptionSendClicked() {
@@ -551,19 +558,28 @@ public class MainViewController {
         }
     }
 
-    private void pushCaptionText(String text) {
-        if (text == null || text.isBlank()) return;
-        Platform.runLater(() -> captionList.getItems().add(new CaptionMessage("Them", text)));
+    public void pushCaptionText(String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        Platform.runLater(() -> captionList.getItems().add(
+                new CaptionMessage("Them", text)
+        ));
     }
 
-    // ---------------------------------------------------------------------
-    // REAL STT using Google Cloud Speech (streaming)
-    // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// REAL STT using Sphinx (desktop, offline)
+// ---------------------------------------------------------------------
 
-    private void postCaptionSystemMessage(String text) {
-        if (text == null || text.isBlank()) return;
-        Platform.runLater(() -> captionList.getItems().add(new CaptionMessage("System", text)));
+    public void postCaptionSystemMessage(String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        Platform.runLater(() -> captionList.getItems().add(
+                new CaptionMessage("System", text)
+        ));
     }
+
 
     // ---------------------------------------------------------------------
     // Settings navigation
