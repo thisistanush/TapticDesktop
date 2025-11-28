@@ -1,6 +1,10 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class AppConfig {
 
@@ -18,71 +22,10 @@ public final class AppConfig {
     private static final List<String> broadcastListenLabels = new ArrayList<>();
 
     // Per-label notification colors (CSS color strings like "#FF5252")
-    private static final List<LabelColor> notificationColors = new ArrayList<>();
+    private static final Map<String, String> notificationColors = new HashMap<>();
 
-    private static String normalizeLabel(String label) {
-        if (label == null) return null;
-        String trimmed = label.trim();
-        if (trimmed.isEmpty()) return null;
-        return trimmed.toLowerCase();
-    }
-
-    public static void seedEmergencyLabel(String label, boolean emergency) {
-        if (!emergency) return; // only seed positives
-        String key = normalizeLabel(label);
-        if (key != null) {
-            addIfMissing(emergencyLabels, key);
-        }
-    }
-
-    public static void setEmergencyLabel(String label, boolean emergency) {
-        String key = normalizeLabel(label);
-        if (key == null) return;
-        if (emergency) {
-            addIfMissing(emergencyLabels, key);
-        } else {
-            emergencyLabels.remove(key);
-        }
-    }
-
-    public static boolean isEmergencyLabel(String label) {
-        String key = normalizeLabel(label);
-        if (key == null) return false;
-        if (emergencyLabels.contains(key)) {
-            return true;
-        }
-
-        if (isEmergencyHeuristic(key)) {
-            addIfMissing(emergencyLabels, key); // seed so future checks stay consistent
-            return true;
-        }
-        return false;
-    }
-
-    public static List<String> getEmergencyLabels() {
-        return Collections.unmodifiableList(new ArrayList<>(emergencyLabels));
-    }
-
-    public static boolean isEmergencyHeuristic(String label) {
-        String key = normalizeLabel(label);
-        if (key == null) return false;
-        return isEmergencyHeuristicNormalized(key);
-    }
-
-    private static boolean isEmergencyHeuristicNormalized(String normalizedLabel) {
-        String s = normalizedLabel.toLowerCase();
-        return s.contains("fire")
-                || s.contains("smoke")
-                || s.contains("siren")
-                || s.contains("alarm")
-                || s.contains("glass")
-                || s.contains("gunshot")
-                || s.contains("explosion")
-                || s.contains("emergency")
-                || s.contains("screaming")
-                || s.contains("crying")
-                || s.contains("baby");
-    }
+    // Custom emergency labels selected by the user
+    private static final Set<String> emergencyLabels = new HashSet<>();
 
     private static String normalizeLabel(String label) {
         if (label == null) return null;
@@ -200,16 +143,6 @@ public final class AppConfig {
     private static void addIfMissing(List<String> list, String value) {
         if (!list.contains(value)) {
             list.add(value);
-        }
-    }
-
-    private static final class LabelColor {
-        private final String label;
-        private String cssColor;
-
-        private LabelColor(String label, String cssColor) {
-            this.label = label;
-            this.cssColor = cssColor;
         }
     }
 }
