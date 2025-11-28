@@ -58,6 +58,11 @@
                                     <ChoiceBox fx:id="emergencySoundChoiceBox" prefWidth="200"/>
                                 </HBox>
 
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Notification emoji:"/>
+                                    <ChoiceBox fx:id="notificationEmojiChoiceBox" prefWidth="120"/>
+                                </HBox>
+
                                 <CheckBox fx:id="flashCheckBox"
                                           text="Flash screen red for emergency sounds"/>
                                 <Label fx:id="flashHelpLabel"

@@ -31,6 +31,7 @@ public class SettingsController {
     @FXML private ChoiceBox<String> notificationSoundChoiceBox;
     @FXML private ChoiceBox<String> emergencySoundChoiceBox;
     @FXML private ChoiceBox<String> emergencyLabelChoiceBox;
+    @FXML private ChoiceBox<String> notificationEmojiChoiceBox;
 
     @FXML private Label soundHelpLabel;
     @FXML private Label flashHelpLabel;
@@ -107,6 +108,25 @@ public class SettingsController {
                     .addListener((obs, old, val) -> {
                         if (val != null) {
                             AppConfig.emergencyNotificationSound = val;
+                        }
+                    });
+        }
+
+        if (notificationEmojiChoiceBox != null) {
+            notificationEmojiChoiceBox.getItems().addAll(
+                    "🔵", "🔴", "🟢", "🔔", "✨", "⚡"
+            );
+            if (!notificationEmojiChoiceBox.getItems().contains(AppConfig.notificationEmoji)) {
+                notificationEmojiChoiceBox.getItems().add(0, AppConfig.notificationEmoji);
+            }
+            notificationEmojiChoiceBox.setValue(AppConfig.notificationEmoji);
+            notificationEmojiChoiceBox.setTooltip(new Tooltip(
+                    "Emoji appended to macOS notifications."
+            ));
+            notificationEmojiChoiceBox.getSelectionModel().selectedItemProperty()
+                    .addListener((obs, old, val) -> {
+                        if (val != null) {
+                            AppConfig.notificationEmoji = val;
                         }
                     });
         }
