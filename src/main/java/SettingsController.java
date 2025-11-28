@@ -28,6 +28,7 @@ public class SettingsController {
     @FXML private Slider sensitivitySlider;
     @FXML private ChoiceBox<String> notificationSoundChoiceBox;
     @FXML private ChoiceBox<String> emergencySoundChoiceBox;
+    @FXML private ChoiceBox<String> emergencyLabelChoiceBox;
 
     @FXML private Label soundHelpLabel;
     @FXML private Label flashHelpLabel;
@@ -37,6 +38,7 @@ public class SettingsController {
 
     // Per-sound notification colors
     @FXML private VBox notificationColorBox;
+    @FXML private FlowPane emergencyLabelChips;
 
     private final Map<String, CheckBox> broadcastSendMap = new HashMap<>();
     private final Map<String, CheckBox> broadcastListenMap = new HashMap<>();
