@@ -13,6 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Records microphone audio and feeds it into the YamNet TFLite model.
+ * The math is unchanged; comments explain each step in plain language.
+ */
 public class YamnetMic implements AutoCloseable, Runnable {
 
     private static final int SR = 16000;
@@ -104,6 +108,7 @@ public class YamnetMic implements AutoCloseable, Runnable {
 
             ByteBuffer bb = ByteBuffer.wrap(hopBytes)
                     .order(ByteOrder.LITTLE_ENDIAN);
+            // Slide new samples into the 0.975s window
             for (int i = 0; i < HOP_SAMPLES; i++) {
                 short s = bb.getShort();
                 float v = s / 32768f;
@@ -121,7 +126,7 @@ public class YamnetMic implements AutoCloseable, Runnable {
                 continue;
             }
 
-            // simple RMS level for sound intensity meter
+            // Simple RMS level for the UI meter
             double sumSq = 0.0;
             for (int i = 0; i < WIN_SAMPLES; i++) {
                 double v = ring[i];
@@ -150,6 +155,7 @@ public class YamnetMic implements AutoCloseable, Runnable {
         TfLiteTensor in = tensorflowlite.TfLiteInterpreterGetInputTensor(
                 interpreter, 0);
 
+        // Copy Java float[] into the native tensor buffer
         FloatPointer inFP = new FloatPointer(WIN_SAMPLES);
         for (int i = 0; i < WIN_SAMPLES; i++) {
             inFP.put(i, mono15600[i]);

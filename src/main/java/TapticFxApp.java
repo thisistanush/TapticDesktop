@@ -3,6 +3,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -22,6 +23,7 @@ public class TapticFxApp extends Application {
     private SettingsController settingsController;
     private Stage bubbleStage;
     private Label bubbleLabel;
+    private Image appIcon;
 
     private YamnetMic yamnetMic;
     private BroadcastListener broadcastListener;
@@ -46,8 +48,7 @@ public class TapticFxApp extends Application {
                 "/fxml/MainView.fxml",
                 "/fxml/main_view.fxml",
                 "/MainView.fxml",
-                "/main_view.fxml"
-        );
+                "/main_view.fxml");
         if (mainFxml == null) {
             throw new IllegalStateException(
                     "Could not find MainView.fxml or main_view.fxml.\n" +
@@ -55,8 +56,7 @@ public class TapticFxApp extends Application {
                             "  src/main/resources/fxml/MainView.fxml\n" +
                             "  src/main/resources/fxml/main_view.fxml\n" +
                             "  src/main/resources/MainView.fxml\n" +
-                            "  src/main/resources/main_view.fxml"
-            );
+                            "  src/main/resources/main_view.fxml");
         }
 
         FXMLLoader mainLoader = new FXMLLoader(mainFxml);
@@ -65,6 +65,11 @@ public class TapticFxApp extends Application {
 
         mainScene = new Scene(mainRoot, 900, 600);
         applyCss(mainScene);
+
+        loadAppIcon();
+        if (appIcon != null) {
+            stage.getIcons().add(appIcon);
+        }
 
         stage.setTitle("Taptic Desktop");
         stage.setScene(mainScene);
@@ -99,7 +104,8 @@ public class TapticFxApp extends Application {
 
     // Helper to apply CSS from likely locations
     private void applyCss(Scene scene) {
-        if (scene == null) return;
+        if (scene == null)
+            return;
 
         String[] cssPaths = {
                 "/fxml/main.css",
@@ -158,8 +164,7 @@ public class TapticFxApp extends Application {
                         "/fxml/SettingsView.fxml",
                         "/fxml/settings_view.fxml",
                         "/SettingsView.fxml",
-                        "/settings_view.fxml"
-                );
+                        "/settings_view.fxml");
                 if (settingsFxml == null) {
                     throw new IllegalStateException(
                             "Could not find SettingsView.fxml or settings_view.fxml.\n" +
@@ -167,8 +172,7 @@ public class TapticFxApp extends Application {
                                     "  src/main/resources/fxml/SettingsView.fxml\n" +
                                     "  src/main/resources/fxml/settings_view.fxml\n" +
                                     "  src/main/resources/SettingsView.fxml\n" +
-                                    "  src/main/resources/settings_view.fxml"
-                    );
+                                    "  src/main/resources/settings_view.fxml");
                 }
 
                 FXMLLoader settingsLoader = new FXMLLoader(settingsFxml);
@@ -179,7 +183,12 @@ public class TapticFxApp extends Application {
                 applyCss(settingsScene);
 
                 if (settingsController != null) {
-                    settingsController.initWithLabels(YamnetMic.getLabels());
+                    String[] labels = YamnetMic.getLabels();
+                    System.out.println("TapticFxApp: Initializing settings with " +
+                            (labels != null ? labels.length : 0) + " labels");
+                    settingsController.initWithLabels(labels);
+                } else {
+                    System.err.println("TapticFxApp: settingsController is null!");
                 }
 
             } catch (IOException e) {
@@ -187,7 +196,11 @@ public class TapticFxApp extends Application {
             }
         }
 
-        primaryStage.setScene(settingsScene);
+        if (primaryStage != null) {
+            primaryStage.setScene(settingsScene);
+        } else {
+            System.err.println("TapticFxApp: primaryStage is null, cannot show settings scene.");
+        }
     }
 
     public void showMainView() {
@@ -250,6 +263,9 @@ public class TapticFxApp extends Application {
         bubbleStage.setScene(scene);
         bubbleStage.setWidth(240);
         bubbleStage.setHeight(80);
+        if (appIcon != null) {
+            bubbleStage.getIcons().add(appIcon);
+        }
         hideBubble();
     }
 
@@ -267,5 +283,19 @@ public class TapticFxApp extends Application {
         if (bubbleStage != null && bubbleStage.isShowing()) {
             bubbleStage.hide();
         }
+    }
+
+    private void loadAppIcon() {
+        try {
+            URL iconUrl = getClass().getResource("/icons/app-icon.png");
+            if (iconUrl != null) {
+                appIcon = new Image(iconUrl.toExternalForm());
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    public Image getAppIcon() {
+        return appIcon;
     }
 }

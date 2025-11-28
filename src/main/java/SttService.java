@@ -1,113 +1,159 @@
-import org.json.JSONObject;
-import org.vosk.Recognizer;
-import org.vosk.Model;
+import edu.cmu.sphinx.api.Configuration;
+import edu.cmu.sphinx.api.LiveSpeechRecognizer;
+import edu.cmu.sphinx.api.SpeechResult;
 
-import javax.sound.sampled.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.io.IOException;
 
 /**
- * Offline speech-to-text service powered by Vosk.
- * Downloads a compact English model on first use so captions work without any setup.
+ * Simple speech-to-text service using CMU Sphinx.
+ *
+ * - Runs on its own background thread.
+ * - Sends recognized text back to MainViewController.
+ * - Uses only basic Java (no lambdas, no Consumer, no AtomicBoolean).
  */
-public class SttService implements AutoCloseable {
+public class SttService implements AutoCloseable, Runnable {
 
-    private static final int SAMPLE_RATE = 16000;
-    private static final AudioFormat FORMAT = new AudioFormat(
-            AudioFormat.Encoding.PCM_SIGNED,
-            SAMPLE_RATE, 16, 1, 2, SAMPLE_RATE, false);
-    private static final int BUFFER_SIZE = 4096;
+    // Reference to the UI controller so we can push text / status messages.
+    private final MainViewController controller;
 
-    private final Consumer<String> onText;
-    private final Consumer<String> onStatus;
-    private TargetDataLine micLine;
+    // Background worker thread for Sphinx.
     private Thread worker;
-    private final AtomicBoolean running = new AtomicBoolean(false);
 
-    public SttService(Consumer<String> onText, Consumer<String> onStatus) {
-        this.onText = onText;
-        this.onStatus = onStatus;
+    // Sphinx recognizer instance.
+    private LiveSpeechRecognizer recognizer;
+
+    // Flag to control the loop.
+    private volatile boolean running = false;
+
+    public SttService(MainViewController controller) {
+        this.controller = controller;
     }
 
-    /** Starts streaming if not already running. Returns true if started. */
+    /**
+     * Try to start the speech recognition thread.
+     *
+     * @return true if Sphinx was started, false if the library is missing or
+     *         something failed before starting.
+     */
     public boolean start() {
-        if (running.get()) return true;
+        // Already running
+        if (running) {
+            return true;
+        }
 
+        // Check if the Sphinx classes are on the classpath.
         try {
-            micLine = openMic();
-        } catch (Exception e) {
-            postStatus("Mic unavailable for captions: " + e.getMessage());
+            Class.forName("edu.cmu.sphinx.api.Configuration");
+        } catch (ClassNotFoundException e) {
+            if (controller != null) {
+                controller.postCaptionSystemMessage(
+                        "System: Speech recognition library (Sphinx) not found. " +
+                                "Caption mic will be disabled.\n" +
+                                e.toString()
+                );
+            }
             return false;
         }
 
-        running.set(true);
-        worker = new Thread(this::runLoop, "STT-Vosk");
+        running = true;
+
+        // Start background thread
+        worker = new Thread(this, "STT-Sphinx");
         worker.setDaemon(true);
         worker.start();
-        postStatus("Speech recognition started (offline).");
+
+        postStatus("System: Speech recognition started (Sphinx).");
         return true;
     }
 
-    private TargetDataLine openMic() throws LineUnavailableException {
-        DataLine.Info info = new DataLine.Info(TargetDataLine.class, FORMAT);
-        TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
-        line.open(FORMAT, SAMPLE_RATE * 2);
-        line.start();
-        return line;
-    }
+    /**
+     * Main loop for the background thread.
+     * Sets up Sphinx, listens on the mic, and sends recognized text to the UI.
+     */
+    @Override
+    public void run() {
+        while (running) {
+            try {
+                recognizer = buildRecognizer();
+                recognizer.startRecognition(true);
+                postStatus("System: Listening… speak into your microphone.");
 
-    private void runLoop() {
-        try (Model model = VoskModelManager.loadModel(this::postStatus);
-             Recognizer recognizer = new Recognizer(model, SAMPLE_RATE)) {
-
-            byte[] buf = new byte[BUFFER_SIZE];
-            while (running.get()) {
-                int n = micLine.read(buf, 0, buf.length);
-                if (n <= 0) continue;
-
-                boolean hasFinal = recognizer.acceptWaveForm(buf, n);
-                if (hasFinal) {
-                    pushRecognizedText(recognizer.getResult());
-                } else {
-                    pushRecognizedText(recognizer.getPartialResult());
+                while (running) {
+                    SpeechResult result = recognizer.getResult();
+                    if (!running) {
+                        break;
+                    }
+                    if (result == null) {
+                        try {
+                            Thread.sleep(30);
+                        } catch (InterruptedException ignored) {
+                        }
+                        continue;
+                    }
+                    String text = result.getHypothesis();
+                    if (text != null) {
+                        text = text.trim();
+                    }
+                    if (text != null && !text.isEmpty() && controller != null) {
+                        controller.pushCaptionText(text);
+                    }
                 }
+            } catch (IOException e) {
+                postStatus("System: Speech recognition error (IO): " + e.getMessage());
+                break;
+            } catch (Throwable t) {
+                // Catch anything else so the thread does not silently die; retry if still running.
+                postStatus("System: Speech recognition crashed: " + t.toString());
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ignored) {
+                }
+            } finally {
+                // Clean up Sphinx
+                if (recognizer != null) {
+                    try {
+                        recognizer.stopRecognition();
+                    } catch (Exception ignored) {
+                    }
+                }
+                recognizer = null;
             }
-        } catch (Exception e) {
-            postStatus("Speech recognition error: " + e.getMessage());
-        } finally {
-            closeMic();
-            running.set(false);
         }
+        running = false;
+        postStatus("System: Speech recognition stopped.");
     }
 
-    private void pushRecognizedText(String jsonResult) {
-        if (jsonResult == null || jsonResult.isBlank()) return;
-        try {
-            JSONObject obj = new JSONObject(jsonResult);
-            String text = obj.optString("text", "").trim();
-            if (!text.isEmpty() && onText != null) {
-                onText.accept(text);
-            }
-        } catch (Exception ignored) {
-        }
+    /**
+     * Build the Sphinx recognizer with the default English model.
+     */
+    private LiveSpeechRecognizer buildRecognizer() throws IOException {
+        Configuration configuration = new Configuration();
+
+        // Use the built-in English acoustic model + dictionary + language model.
+        configuration.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        configuration.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        configuration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+
+        return new LiveSpeechRecognizer(configuration);
     }
 
+    /**
+     * Request the recognizer thread to stop.
+     * Safe to call multiple times.
+     */
     public void stop() {
-        running.set(false);
-        closeMic();
-    }
-
-    private void closeMic() {
-        if (micLine != null) {
-            try { micLine.stop(); } catch (Exception ignored) {}
-            try { micLine.close(); } catch (Exception ignored) {}
-            micLine = null;
+        running = false;
+        if (recognizer != null) {
+            try {
+                recognizer.stopRecognition();
+            } catch (Exception ignored) {
+            }
         }
     }
 
     private void postStatus(String msg) {
-        if (onStatus != null && msg != null && !msg.isBlank()) {
-            onStatus.accept(msg);
+        if (controller != null && msg != null && !msg.isEmpty()) {
+            controller.postCaptionSystemMessage(msg);
         }
     }
 

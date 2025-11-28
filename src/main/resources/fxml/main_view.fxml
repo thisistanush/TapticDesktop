@@ -4,217 +4,229 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:id="rootPane"
-            fx:controller="MainViewController">
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:id="rootStack"
+           fx:controller="MainViewController"
+           styleClass="app-surface">
 
-    <top>
-        <HBox spacing="10" alignment="CENTER_LEFT"
-              styleClass="header-bar">
-            <padding>
-                <Insets top="8" right="12" bottom="8" left="12"/>
-            </padding>
-            <Label text="Taptic Desktop"
-                   styleClass="header-title"/>
-            <Label fx:id="micWarningLabel"
-                   text="No microphone detected"
-                   visible="false"
-                   managed="false"
-                   styleClass="mic-warning"/>
-
-            <Pane HBox.hgrow="ALWAYS"/>
-
-            <ToggleButton fx:id="historyToggle"
-                          text="▸ History"
-                          styleClass="header-button"
-                          onAction="#onHistoryToggled"
-                          focusTraversable="false">
-                <tooltip>
-                    <Tooltip text="Show/hide sound history drawer"/>
-                </tooltip>
-            </ToggleButton>
-
-            <Button fx:id="settingsButton"
-                    text="⚙ Settings"
-                    styleClass="header-button"
-                    onAction="#onSettingsClicked"
-                    focusTraversable="false">
-                <tooltip>
-                    <Tooltip text="Network + notification settings"/>
-                </tooltip>
-            </Button>
-        </HBox>
-    </top>
-
-    <center>
-        <StackPane>
-            <VBox spacing="8" alignment="TOP_CENTER">
-                <TabPane tabClosingPolicy="UNAVAILABLE">
-                    <Tab text="Sound dashboard">
-                        <content>
-                            <VBox spacing="18" alignment="CENTER">
-                                <padding>
-                                    <Insets top="24" right="20" bottom="10" left="20"/>
-                                </padding>
-
-                                <Label fx:id="statusLabel"
-                                       styleClass="status-label"/>
-
-                                <VBox spacing="10" alignment="CENTER">
-                                    <Label text="Now hearing"
-                                           styleClass="now-caption"/>
-                                    <Label fx:id="nowLabel"
-                                           text="-"
-                                           styleClass="now-label"/>
-                                </VBox>
-
-                                <VBox spacing="8" alignment="CENTER">
-                                    <Label text="Sound level"
-                                           styleClass="now-caption"/>
-                                    <ProgressBar fx:id="levelBar"
-                                                 prefWidth="320"
-                                                 progress="0.0"
-                                                 styleClass="level-bar"/>
-                                </VBox>
-
-                                <VBox spacing="10" maxWidth="520"
-                                      styleClass="card">
-                                    <HBox spacing="12" alignment="CENTER_LEFT">
-                                        <Label text="1."
-                                               styleClass="rank-label-1"/>
-                                        <Label fx:id="top1Label" text="-" prefWidth="300"/>
-                                        <ProgressBar fx:id="top1Bar"
-                                                     prefWidth="180"
-                                                     progress="0.0"
-                                                     styleClass="top1-bar"/>
-                                    </HBox>
-
-                                    <HBox spacing="12" alignment="CENTER_LEFT">
-                                        <Label text="2."
-                                               styleClass="rank-label-2"/>
-                                        <Label fx:id="top2Label" text="-" prefWidth="300"/>
-                                        <ProgressBar fx:id="top2Bar"
-                                                     prefWidth="180"
-                                                     progress="0.0"
-                                                     styleClass="top2-bar"/>
-                                    </HBox>
-
-                                    <HBox spacing="12" alignment="CENTER_LEFT">
-                                        <Label text="3."
-                                               styleClass="rank-label-3"/>
-                                        <Label fx:id="top3Label" text="-" prefWidth="300"/>
-                                        <ProgressBar fx:id="top3Bar"
-                                                     prefWidth="180"
-                                                     progress="0.0"
-                                                     styleClass="top3-bar"/>
-                                    </HBox>
-                                </VBox>
-                            </VBox>
-                        </content>
-                    </Tab>
-
-                    <Tab text="Text (live captions)">
-                        <content>
-                            <BorderPane>
-                                <center>
-                                    <ListView fx:id="captionList"
-                                              prefHeight="400"/>
-                                </center>
-                                <bottom>
-                                    <HBox spacing="8" alignment="CENTER_LEFT">
-                                        <padding>
-                                            <Insets top="10" right="10" bottom="10" left="10"/>
-                                        </padding>
-                                        <ToggleButton fx:id="captionMicToggle"
-                                                      text="Start mic"
-                                                      onAction="#onCaptionMicToggled"/>
-                                        <TextField fx:id="captionInputField"
-                                                   promptText="Type a reply…"
-                                                   HBox.hgrow="ALWAYS"/>
-                                        <Button text="Send"
-                                                onAction="#onCaptionSendClicked"/>
-                                    </HBox>
-                                </bottom>
-                            </BorderPane>
-                        </content>
-                    </Tab>
-                </TabPane>
-            </VBox>
-
-            <!-- Slide-out history drawer -->
-            <VBox fx:id="historyDrawer"
-                  visible="false"
-                  managed="false"
-                  spacing="10"
-                  StackPane.alignment="CENTER_RIGHT"
-                  styleClass="history-drawer">
-                <padding>
-                    <Insets top="14" right="12" bottom="14" left="14"/>
-                </padding>
-                <HBox alignment="CENTER_LEFT" spacing="8">
-                    <Label text="History"
-                           styleClass="history-title"/>
-                    <Pane HBox.hgrow="ALWAYS"/>
-                    <Button text="Clear"
-                            onAction="#onHistoryClearClicked"
-                            styleClass="header-button"/>
-                </HBox>
-                <Label text="All sounds heard (local + remote). ★ marks notifications."
-                       wrapText="true"
-                       styleClass="settings-help"/>
-                <ListView fx:id="historyList"
-                          prefWidth="320"
-                          prefHeight="520"/>
-            </VBox>
-        </StackPane>
-    </center>
-
-    <bottom>
-        <TitledPane text="What should Taptic listen and alert for?" expanded="false">
-            <content>
-                <VBox spacing="8">
+    <children>
+        <BorderPane fx:id="rootPane">
+            <top>
+                <HBox spacing="10" alignment="CENTER_LEFT"
+                      styleClass="header-bar">
                     <padding>
-                        <Insets top="8" right="10" bottom="10" left="10"/>
+                        <Insets top="8" right="12" bottom="8" left="12"/>
                     </padding>
+                    <Label text="Taptic Desktop"
+                           styleClass="header-title"/>
+                    <Label fx:id="micWarningLabel"
+                           text="No microphone detected"
+                           visible="false"
+                           managed="false"
+                           styleClass="mic-warning"/>
 
-                    <Label text="Choose which sounds Taptic pays attention to (Monitored) and which of those should trigger notifications (Notify)."
-                           wrapText="true"
-                           styleClass="settings-help"/>
+                    <Pane HBox.hgrow="ALWAYS"/>
 
-                    <TabPane fx:id="optionsTabPane" tabClosingPolicy="UNAVAILABLE">
-                        <tabs>
-                            <Tab text="Monitored">
+                    <ToggleButton fx:id="historyToggle"
+                                  text="▸ History"
+                                  styleClass="header-button"
+                                  onAction="#onHistoryToggled"
+                                  focusTraversable="false">
+                        <tooltip>
+                            <Tooltip text="Show/hide sound history drawer"/>
+                        </tooltip>
+                    </ToggleButton>
+
+                    <Button fx:id="settingsButton"
+                            text="⚙ Settings"
+                            styleClass="header-button"
+                            onAction="#onSettingsClicked"
+                            focusTraversable="false">
+                        <tooltip>
+                            <Tooltip text="Network + notification settings"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </top>
+
+            <center>
+                <StackPane>
+                    <VBox spacing="8" alignment="TOP_CENTER">
+                        <TabPane tabClosingPolicy="UNAVAILABLE">
+                            <Tab text="Sound dashboard">
                                 <content>
-                                    <ScrollPane fitToWidth="true" prefHeight="160.0">
-                                        <content>
-                                            <VBox fx:id="monitoredBox" spacing="6">
-                                                <padding>
-                                                    <Insets top="10" right="10" bottom="10" left="10"/>
-                                                </padding>
-                                            </VBox>
-                                        </content>
-                                    </ScrollPane>
+                                    <VBox spacing="18" alignment="CENTER">
+                                        <padding>
+                                            <Insets top="24" right="20" bottom="10" left="20"/>
+                                        </padding>
+
+                                        <Label fx:id="statusLabel"
+                                               styleClass="status-label"/>
+
+                                        <VBox spacing="10" alignment="CENTER">
+                                            <Label text="Now hearing"
+                                                   styleClass="now-caption"/>
+                                            <Label fx:id="nowLabel"
+                                                   text="-"
+                                                   styleClass="now-label"/>
+                                        </VBox>
+
+                                        <VBox spacing="8" alignment="CENTER">
+                                            <Label text="Sound level"
+                                                   styleClass="now-caption"/>
+                                            <ProgressBar fx:id="levelBar"
+                                                         prefWidth="320"
+                                                         progress="0.0"
+                                                         styleClass="level-bar"/>
+                                        </VBox>
+
+                                        <VBox spacing="10" maxWidth="520"
+                                              styleClass="card">
+                                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                                <Label text="1."
+                                                       styleClass="rank-label-1"/>
+                                                <Label fx:id="top1Label" text="-" prefWidth="300"/>
+                                                <ProgressBar fx:id="top1Bar"
+                                                             prefWidth="180"
+                                                             progress="0.0"
+                                                             styleClass="top1-bar"/>
+                                            </HBox>
+
+                                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                                <Label text="2."
+                                                       styleClass="rank-label-2"/>
+                                                <Label fx:id="top2Label" text="-" prefWidth="300"/>
+                                                <ProgressBar fx:id="top2Bar"
+                                                             prefWidth="180"
+                                                             progress="0.0"
+                                                             styleClass="top2-bar"/>
+                                            </HBox>
+
+                                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                                <Label text="3."
+                                                       styleClass="rank-label-3"/>
+                                                <Label fx:id="top3Label" text="-" prefWidth="300"/>
+                                                <ProgressBar fx:id="top3Bar"
+                                                             prefWidth="180"
+                                                             progress="0.0"
+                                                             styleClass="top3-bar"/>
+                                            </HBox>
+                                        </VBox>
+                                    </VBox>
                                 </content>
                             </Tab>
 
-                            <Tab text="Notify">
+                            <Tab text="Text (live captions)">
                                 <content>
-                                    <ScrollPane fitToWidth="true" prefHeight="160.0">
-                                        <content>
-                                            <VBox fx:id="notifyBox" spacing="6">
+                                    <BorderPane>
+                                        <center>
+                                            <ListView fx:id="captionList"
+                                                      prefHeight="400"/>
+                                        </center>
+                                        <bottom>
+                                            <HBox spacing="8" alignment="CENTER_LEFT">
                                                 <padding>
                                                     <Insets top="10" right="10" bottom="10" left="10"/>
                                                 </padding>
-                                            </VBox>
-                                        </content>
-                                    </ScrollPane>
+                                                <ToggleButton fx:id="captionMicToggle"
+                                                              text="Start mic"
+                                                              onAction="#onCaptionMicToggled"/>
+                                                <TextField fx:id="captionInputField"
+                                                           promptText="Type a reply…"
+                                                           HBox.hgrow="ALWAYS"/>
+                                                <Button text="Send"
+                                                        styleClass="cta-button"
+                                                        onAction="#onCaptionSendClicked"/>
+                                            </HBox>
+                                        </bottom>
+                                    </BorderPane>
                                 </content>
                             </Tab>
-                        </tabs>
-                    </TabPane>
-                </VBox>
-            </content>
-        </TitledPane>
-    </bottom>
-</BorderPane>
+                        </TabPane>
+                    </VBox>
+
+                    <!-- Slide-out history drawer -->
+                    <VBox fx:id="historyDrawer"
+                          visible="false"
+                          managed="false"
+                          spacing="10"
+                          StackPane.alignment="CENTER_RIGHT"
+                          styleClass="history-drawer">
+                        <padding>
+                            <Insets top="14" right="12" bottom="14" left="14"/>
+                        </padding>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label text="History"
+                                   styleClass="history-title"/>
+                            <Pane HBox.hgrow="ALWAYS"/>
+                            <Button text="Clear"
+                                    onAction="#onHistoryClearClicked"
+                                    styleClass="header-button"/>
+                        </HBox>
+                        <Label text="All sounds heard (local + remote). ★ marks notifications."
+                               wrapText="true"
+                               styleClass="settings-help"/>
+                        <ListView fx:id="historyList"
+                                  prefWidth="320"
+                                  prefHeight="520"/>
+                    </VBox>
+                </StackPane>
+            </center>
+
+            <bottom>
+                <TitledPane text="What should Taptic listen and alert for?" expanded="false">
+                    <content>
+                        <VBox spacing="8">
+                            <padding>
+                                <Insets top="8" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <Label text="Choose which sounds Taptic pays attention to (Monitored) and which of those should trigger notifications (Notify)."
+                                   wrapText="true"
+                                   styleClass="settings-help"/>
+
+                            <TabPane fx:id="optionsTabPane" tabClosingPolicy="UNAVAILABLE">
+                                <tabs>
+                                    <Tab text="Monitored">
+                                        <content>
+                                            <ScrollPane fitToWidth="true" prefHeight="160.0">
+                                                <content>
+                                                    <VBox fx:id="monitoredBox" spacing="6">
+                                                        <padding>
+                                                            <Insets top="10" right="10" bottom="10" left="10"/>
+                                                        </padding>
+                                                    </VBox>
+                                                </content>
+                                            </ScrollPane>
+                                        </content>
+                                    </Tab>
+
+                                    <Tab text="Notify">
+                                        <content>
+                                            <ScrollPane fitToWidth="true" prefHeight="160.0">
+                                                <content>
+                                                    <VBox fx:id="notifyBox" spacing="6">
+                                                        <padding>
+                                                            <Insets top="10" right="10" bottom="10" left="10"/>
+                                                        </padding>
+                                                    </VBox>
+                                                </content>
+                                            </ScrollPane>
+                                        </content>
+                                    </Tab>
+                                </tabs>
+                            </TabPane>
+                        </VBox>
+                    </content>
+                </TitledPane>
+            </bottom>
+        </BorderPane>
+
+        <Pane fx:id="flashOverlay"
+              visible="false"
+              managed="false"
+              mouseTransparent="true"
+              style="-fx-background-color: rgba(255,82,82,0.85);"/>
+    </children>
+</StackPane>
