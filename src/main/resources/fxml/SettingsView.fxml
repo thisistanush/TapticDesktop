@@ -81,6 +81,40 @@
 
                                 <Separator/>
 
+                                <Label text="Emergency sounds"
+                                       styleClass="settings-section-title"/>
+                                <Label text="Select which sounds should trigger emergency alerts (screen flash, emergency sound). By default, sounds like fire, smoke, alarm, siren, glass breaking, gunshot, and explosion are marked as emergency."
+                                       wrapText="true"
+                                       styleClass="settings-help"/>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Label text="Add emergency sound:"/>
+                                    <ChoiceBox fx:id="emergencyLabelChoiceBox" prefWidth="200"/>
+                                    <Button text="Add" 
+                                            styleClass="cta-button"
+                                            onAction="#onAddEmergencyLabelClicked">
+                                        <tooltip>
+                                            <Tooltip text="Add selected sound to emergency list"/>
+                                        </tooltip>
+                                    </Button>
+                                </HBox>
+
+                                <Label text="Current emergency sounds:"
+                                       styleClass="settings-help"/>
+                                <ScrollPane fitToWidth="true" prefHeight="80">
+                                    <content>
+                                        <FlowPane fx:id="emergencyLabelChips" 
+                                                  hgap="6" vgap="6"
+                                                  styleClass="chip-container">
+                                            <padding>
+                                                <Insets top="8" right="8" bottom="8" left="8"/>
+                                            </padding>
+                                        </FlowPane>
+                                    </content>
+                                </ScrollPane>
+
+                                <Separator/>
+
                                 <Label text="Per-sound notification colors"
                                        styleClass="settings-section-title"/>
                                 <Label text="These colors are used for the status text and notifications when each sound is detected."

@@ -13,7 +13,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
-import javax.sound.sampled.*;
 import java.util.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -22,40 +21,62 @@ import java.util.concurrent.Executors;
 
 public class MainViewController {
 
-    @FXML private StackPane rootStack;
-    @FXML private BorderPane rootPane;
-    @FXML private Pane flashOverlay;
+    @FXML
+    private StackPane rootStack;
+    @FXML
+    private BorderPane rootPane;
+    @FXML
+    private Pane flashOverlay;
 
-    @FXML private Label statusLabel;
-    @FXML private Label nowLabel;
-    @FXML private Label top1Label;
-    @FXML private Label top2Label;
-    @FXML private Label top3Label;
+    @FXML
+    private Label statusLabel;
+    @FXML
+    private Label nowLabel;
+    @FXML
+    private Label top1Label;
+    @FXML
+    private Label top2Label;
+    @FXML
+    private Label top3Label;
 
-    @FXML private ProgressBar top1Bar;
-    @FXML private ProgressBar top2Bar;
-    @FXML private ProgressBar top3Bar;
+    @FXML
+    private ProgressBar top1Bar;
+    @FXML
+    private ProgressBar top2Bar;
+    @FXML
+    private ProgressBar top3Bar;
 
     // Sound intensity meter
-    @FXML private ProgressBar levelBar;
+    @FXML
+    private ProgressBar levelBar;
 
-    @FXML private VBox monitoredBox;
-    @FXML private VBox notifyBox;
+    @FXML
+    private VBox monitoredBox;
+    @FXML
+    private VBox notifyBox;
 
-    @FXML private TabPane optionsTabPane;
+    @FXML
+    private TabPane optionsTabPane;
 
     // History sidebar
-    @FXML private ListView<String> historyList;
-    @FXML private ToggleButton historyToggle;
-    @FXML private VBox historyDrawer;
+    @FXML
+    private ListView<String> historyList;
+    @FXML
+    private ToggleButton historyToggle;
+    @FXML
+    private VBox historyDrawer;
     private TranslateTransition historyTransition;
 
     // Caption tab (chat-like)
-    @FXML private ListView<CaptionMessage> captionList;
-    @FXML private TextField captionInputField;
-    @FXML private ToggleButton captionMicToggle;
+    @FXML
+    private ListView<CaptionMessage> captionList;
+    @FXML
+    private TextField captionInputField;
+    @FXML
+    private ToggleButton captionMicToggle;
 
-    @FXML private Label micWarningLabel;
+    @FXML
+    private Label micWarningLabel;
 
     private final Map<String, CheckBox> monitoredMap = new HashMap<>();
     private final Map<String, CheckBox> notifyMap = new HashMap<>();
@@ -74,8 +95,7 @@ public class MainViewController {
     // STT service (Google Cloud Speech)
     private SttService sttService;
 
-    private static final DateTimeFormatter TIME_FMT =
-            DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @FXML
     private void initialize() {
@@ -174,7 +194,8 @@ public class MainViewController {
     // ---------------------------------------------------------------------
 
     public void initMonitoredLists(String[] allLabels) {
-        if (allLabels == null) return;
+        if (allLabels == null)
+            return;
 
         List<String> interesting = new ArrayList<>();
         for (String label : allLabels) {
@@ -218,7 +239,8 @@ public class MainViewController {
                 "drip", "dripping", "raindrop"
         };
         for (String b : bad) {
-            if (lower.contains(b)) return false;
+            if (lower.contains(b))
+                return false;
         }
 
         String[] good = {
@@ -243,7 +265,8 @@ public class MainViewController {
                 "thunder"
         };
         for (String g : good) {
-            if (lower.contains(g)) return true;
+            if (lower.contains(g))
+                return true;
         }
         return false;
     }
@@ -262,15 +285,16 @@ public class MainViewController {
 
     /** Sound intensity meter (0..1). Called from Interpreter. */
     public void updateSoundLevel(double level) {
-        if (levelBar == null) return;
+        if (levelBar == null)
+            return;
         double clamped = Math.max(0.0, Math.min(1.0, level));
         Platform.runLater(() -> animateProgress(levelBar, clamped));
     }
 
     /** Update the live "top 3" view. Called from Interpreter (NOT on FX thread). */
     public void updateTop3(String l1, double s1,
-                           String l2, double s2,
-                           String l3, double s3) {
+            String l2, double s2,
+            String l3, double s3) {
         Platform.runLater(() -> {
             if (nowLabel != null) {
                 animateNowLabel(l1 != null ? l1 : "-");
@@ -287,7 +311,8 @@ public class MainViewController {
     }
 
     private void updateRow(Label label, ProgressBar bar, String cls, double score) {
-        if (label == null || bar == null) return;
+        if (label == null || bar == null)
+            return;
         String name = (cls == null) ? "-" : cls;
         double clamped = Math.max(0.0, Math.min(1.0, score));
         int pct = (int) Math.round(clamped * 100.0);
@@ -296,8 +321,10 @@ public class MainViewController {
     }
 
     private void animateNowLabel(String text) {
-        if (nowLabel == null) return;
-        if (Objects.equals(nowLabel.getText(), text)) return;
+        if (nowLabel == null)
+            return;
+        if (Objects.equals(nowLabel.getText(), text))
+            return;
         nowLabel.setOpacity(0.25);
         nowLabel.setText(text);
         FadeTransition ft = new FadeTransition(Duration.millis(200), nowLabel);
@@ -306,8 +333,10 @@ public class MainViewController {
     }
 
     private void animateLabel(Label label, String text) {
-        if (label == null) return;
-        if (Objects.equals(label.getText(), text)) return;
+        if (label == null)
+            return;
+        if (Objects.equals(label.getText(), text))
+            return;
         label.setOpacity(0.4);
         label.setText(text);
         FadeTransition ft = new FadeTransition(Duration.millis(160), label);
@@ -316,7 +345,8 @@ public class MainViewController {
     }
 
     private void animateProgress(ProgressBar bar, double target) {
-        if (bar == null) return;
+        if (bar == null)
+            return;
         target = Math.max(0, Math.min(1, target));
         Timeline existing = progressAnimations.get(bar);
         if (existing != null) {
@@ -325,8 +355,7 @@ public class MainViewController {
         double start = bar.getProgress();
         Timeline t = new Timeline(
                 new KeyFrame(Duration.ZERO, new KeyValue(bar.progressProperty(), start)),
-                new KeyFrame(Duration.millis(260), new KeyValue(bar.progressProperty(), target))
-        );
+                new KeyFrame(Duration.millis(260), new KeyValue(bar.progressProperty(), target)));
         progressAnimations.put(bar, t);
         t.play();
     }
@@ -370,8 +399,7 @@ public class MainViewController {
                     "Taptic Desktop",
                     text,
                     color,
-                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null
-            );
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null);
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();
@@ -381,9 +409,12 @@ public class MainViewController {
 
     /** Remote notification from another machine (via broadcast). */
     public void handleRemoteNotification(String label, String host, boolean emergency) {
-        if (!AppConfig.isBroadcastListenEnabled(label)) return;
-        if (!isMonitored(label)) return;
-        if (!isNotifyEnabled(label)) return;
+        if (!AppConfig.isBroadcastListenEnabled(label))
+            return;
+        if (!isMonitored(label))
+            return;
+        if (!isNotifyEnabled(label))
+            return;
 
         final double score = 1.0;
 
@@ -417,8 +448,7 @@ public class MainViewController {
                     "Remote: " + source,
                     text,
                     color,
-                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null
-            );
+                    TapticFxApp.getInstance() != null ? TapticFxApp.getInstance().getAppIcon() : null);
 
             if (emergency && AppConfig.flashEmergency) {
                 flashEmergency();
@@ -445,7 +475,8 @@ public class MainViewController {
     }
 
     private void flashEmergency() {
-        if (flashOverlay == null || rootStack == null) return;
+        if (flashOverlay == null || rootStack == null)
+            return;
         if (flashTimeline != null) {
             flashTimeline.stop();
         }
@@ -496,7 +527,8 @@ public class MainViewController {
 
     @FXML
     private void onHistoryToggled() {
-        if (historyDrawer == null || historyTransition == null) return;
+        if (historyDrawer == null || historyTransition == null)
+            return;
         boolean show = historyToggle != null && historyToggle.isSelected();
         historyDrawer.setVisible(true);
         historyDrawer.setManaged(true);
@@ -522,12 +554,13 @@ public class MainViewController {
     }
 
     public void addHistory(String label,
-                           double score,
-                           boolean emergency,
-                           boolean local,
-                           String host,
-                            boolean important) {
-        if (historyList == null || label == null) return;
+            double score,
+            boolean emergency,
+            boolean local,
+            String host,
+            boolean important) {
+        if (historyList == null || label == null)
+            return;
         int pct = (int) Math.round(score * 100.0);
         String src;
         if (local) {
@@ -555,9 +588,11 @@ public class MainViewController {
     // ---------------------------------------------------------------------
 
     private void sendCaptionMessage() {
-        if (captionInputField == null || captionList == null) return;
+        if (captionInputField == null || captionList == null)
+            return;
         String text = captionInputField.getText();
-        if (text == null || text.isBlank()) return;
+        if (text == null || text.isBlank())
+            return;
         captionInputField.clear();
 
         CaptionMessage msg = new CaptionMessage("You", text);
@@ -583,8 +618,6 @@ public class MainViewController {
         });
     }
 
-
-
     @FXML
     private void onCaptionSendClicked() {
         sendCaptionMessage();
@@ -592,7 +625,8 @@ public class MainViewController {
 
     @FXML
     private void onCaptionMicToggled() {
-        if (captionMicToggle == null) return;
+        if (captionMicToggle == null)
+            return;
         boolean on = captionMicToggle.isSelected();
         captionMicToggle.setText(on ? "Listening…" : "Start mic");
 
@@ -614,23 +648,20 @@ public class MainViewController {
             return;
         }
         Platform.runLater(() -> captionList.getItems().add(
-                new CaptionMessage("Them", text)
-        ));
+                new CaptionMessage("Them", text)));
     }
 
-// ---------------------------------------------------------------------
-// REAL STT using Sphinx (desktop, offline)
-// ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------
+    // REAL STT using Sphinx (desktop, offline)
+    // ---------------------------------------------------------------------
 
     public void postCaptionSystemMessage(String text) {
         if (text == null || text.isBlank()) {
             return;
         }
         Platform.runLater(() -> captionList.getItems().add(
-                new CaptionMessage("System", text)
-        ));
+                new CaptionMessage("System", text)));
     }
-
 
     // ---------------------------------------------------------------------
     // Settings navigation
@@ -638,9 +669,20 @@ public class MainViewController {
 
     @FXML
     private void onSettingsClicked() {
-        TapticFxApp app = TapticFxApp.getInstance();
-        if (app != null) {
-            app.showSettingsView();
+        try {
+            TapticFxApp app = TapticFxApp.getInstance();
+            if (app != null) {
+                app.showSettingsView();
+            } else {
+                System.err.println("MainViewController: TapticFxApp instance is null");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Could not open settings");
+            alert.setContentText(e.getMessage());
+            alert.show();
         }
     }
 }

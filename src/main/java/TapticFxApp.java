@@ -48,8 +48,7 @@ public class TapticFxApp extends Application {
                 "/fxml/MainView.fxml",
                 "/fxml/main_view.fxml",
                 "/MainView.fxml",
-                "/main_view.fxml"
-        );
+                "/main_view.fxml");
         if (mainFxml == null) {
             throw new IllegalStateException(
                     "Could not find MainView.fxml or main_view.fxml.\n" +
@@ -57,8 +56,7 @@ public class TapticFxApp extends Application {
                             "  src/main/resources/fxml/MainView.fxml\n" +
                             "  src/main/resources/fxml/main_view.fxml\n" +
                             "  src/main/resources/MainView.fxml\n" +
-                            "  src/main/resources/main_view.fxml"
-            );
+                            "  src/main/resources/main_view.fxml");
         }
 
         FXMLLoader mainLoader = new FXMLLoader(mainFxml);
@@ -106,7 +104,8 @@ public class TapticFxApp extends Application {
 
     // Helper to apply CSS from likely locations
     private void applyCss(Scene scene) {
-        if (scene == null) return;
+        if (scene == null)
+            return;
 
         String[] cssPaths = {
                 "/fxml/main.css",
@@ -165,8 +164,7 @@ public class TapticFxApp extends Application {
                         "/fxml/SettingsView.fxml",
                         "/fxml/settings_view.fxml",
                         "/SettingsView.fxml",
-                        "/settings_view.fxml"
-                );
+                        "/settings_view.fxml");
                 if (settingsFxml == null) {
                     throw new IllegalStateException(
                             "Could not find SettingsView.fxml or settings_view.fxml.\n" +
@@ -174,8 +172,7 @@ public class TapticFxApp extends Application {
                                     "  src/main/resources/fxml/SettingsView.fxml\n" +
                                     "  src/main/resources/fxml/settings_view.fxml\n" +
                                     "  src/main/resources/SettingsView.fxml\n" +
-                                    "  src/main/resources/settings_view.fxml"
-                    );
+                                    "  src/main/resources/settings_view.fxml");
                 }
 
                 FXMLLoader settingsLoader = new FXMLLoader(settingsFxml);
@@ -186,7 +183,12 @@ public class TapticFxApp extends Application {
                 applyCss(settingsScene);
 
                 if (settingsController != null) {
-                    settingsController.initWithLabels(YamnetMic.getLabels());
+                    String[] labels = YamnetMic.getLabels();
+                    System.out.println("TapticFxApp: Initializing settings with " +
+                            (labels != null ? labels.length : 0) + " labels");
+                    settingsController.initWithLabels(labels);
+                } else {
+                    System.err.println("TapticFxApp: settingsController is null!");
                 }
 
             } catch (IOException e) {
@@ -194,7 +196,11 @@ public class TapticFxApp extends Application {
             }
         }
 
-        primaryStage.setScene(settingsScene);
+        if (primaryStage != null) {
+            primaryStage.setScene(settingsScene);
+        } else {
+            System.err.println("TapticFxApp: primaryStage is null, cannot show settings scene.");
+        }
     }
 
     public void showMainView() {

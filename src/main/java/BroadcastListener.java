@@ -7,8 +7,12 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Listens for UDP broadcast messages from other Taptic Desktop instances.
- * Kept intentionally small: read packet → ignore self → hand to Interpreter.
+ * Listens for sound detection broadcasts from other Taptic Desktop devices.
+ * Runs in a background thread continuously listening for UDP messages.
+ * 
+ * When a message is received, it:
+ * 1. Checks if it's from this device (and ignores it if so)
+ * 2. Passes the JSON to Interpreter for processing
  */
 public class BroadcastListener implements Closeable, Runnable {
 
@@ -16,10 +20,18 @@ public class BroadcastListener implements Closeable, Runnable {
     private volatile boolean running = true;
     private DatagramSocket socket;
 
+    /**
+     * Create a listener on the specified port.
+     * 
+     * @param port UDP port number (typically 9876)
+     */
     public BroadcastListener(int port) {
         this.port = port;
     }
 
+    /**
+     * Run method for Thread. Starts listening for broadcasts.
+     */
     @Override
     public void run() {
         try {
@@ -29,29 +41,38 @@ public class BroadcastListener implements Closeable, Runnable {
         }
     }
 
+    /**
+     * Start listening for broadcast messages.
+     * This method blocks until stopListening() is called.
+     * 
+     * @throws SocketException If the socket can't be created
+     */
     public void start() throws SocketException {
         socket = new DatagramSocket(port);
         socket.setReuseAddress(true);
-        byte[] buf = new byte[2048];
+        byte[] buffer = new byte[2048];
 
-        // Simple forever loop: block for a packet, decode, forward.
+        // Keep receiving packets until stopped
         while (running) {
             try {
-                DatagramPacket pkt = new DatagramPacket(buf, buf.length);
-                socket.receive(pkt);
-                String text = new String(
-                        pkt.getData(),
-                        pkt.getOffset(),
-                        pkt.getLength(),
-                        StandardCharsets.UTF_8
-                );
+                // Wait for a packet
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
 
-                // ignore messages this host emitted
-                if (text.contains(getHostName())) {
+                // Convert packet data to string
+                String jsonText = new String(
+                        packet.getData(),
+                        packet.getOffset(),
+                        packet.getLength(),
+                        StandardCharsets.UTF_8);
+
+                // Ignore messages from this computer (don't notify ourselves)
+                if (jsonText.contains(getHostName())) {
                     continue;
                 }
 
-                Interpreter.handleBroadcastJson(text);
+                // Pass to Interpreter for processing
+                Interpreter.handleBroadcastJson(jsonText);
 
             } catch (IOException e) {
                 if (running) {
@@ -61,10 +82,16 @@ public class BroadcastListener implements Closeable, Runnable {
         }
     }
 
+    /**
+     * Stop listening for broadcasts.
+     */
     public void stopListening() {
         running = false;
     }
 
+    /**
+     * Close the listener and release resources.
+     */
     @Override
     public void close() {
         running = false;
@@ -73,6 +100,11 @@ public class BroadcastListener implements Closeable, Runnable {
         }
     }
 
+    /**
+     * Get this computer's hostname.
+     * 
+     * @return Hostname, or "unknown" if it can't be determined
+     */
     private static String getHostName() {
         try {
             return InetAddress.getLocalHost().getHostName();

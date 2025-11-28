@@ -1,61 +1,23 @@
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
-public class Main extends Application {
+/**
+ * Application entry point for Taptic Desktop.
+ * 
+ * This is the main class that Java runs when you start the application.
+ * All it does is launch the JavaFX application (TapticFxApp).
+ * 
+ * The actual UI setup and initialization happens in TapticFxApp.java.
+ */
+public class Main {
 
-    private YamnetMic yamnetMic;
-    private BroadcastListener broadcastListener;
-    private static final int PORT = 50000;
-
-    @Override
-    public void start(Stage stage) throws Exception {
-        // Load the main UI from FXML. Keeping this in one place makes the
-        // startup sequence easy to follow.
-        FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
-        Parent root = loader.load();
-        MainViewController controller = loader.getController();
-
-        Scene scene = new Scene(root, 640, 520);
-        scene.getStylesheets().add(Main.class.getResource("/fxml/main.css").toExternalForm());
-        stage.setTitle("Taptic Desktop");
-        stage.setScene(scene);
-        stage.show();
-
-        // Networking: the app both sends and listens for UDP broadcasts so
-        // multiple machines can share detections on the same LAN.
-        BroadcastSender sender = new BroadcastSender(PORT);
-        broadcastListener = new BroadcastListener(PORT);
-        Thread listenerThread = new Thread(broadcastListener, "BroadcastListener");
-        listenerThread.setDaemon(true);
-        listenerThread.start();
-
-        // Audio classification + captioning
-        yamnetMic = new YamnetMic();
-        Interpreter.init(sender, controller, YamnetMic.getLabels());
-
-        Thread micThread = new Thread(yamnetMic, "YamnetMic");
-        micThread.setDaemon(true);
-        micThread.start();
-
-        controller.setStatusText("Listening…");
-    }
-
-    @Override
-    public void stop() throws Exception {
-        if (yamnetMic != null) {
-            yamnetMic.stopListening();
-            yamnetMic.close();
-        }
-        if (broadcastListener != null) {
-            broadcastListener.stopListening();
-            broadcastListener.close();
-        }
-    }
-
+    /**
+     * Main entry point called by the Java runtime.
+     * 
+     * @param args Command line arguments (not currently used)
+     */
     public static void main(String[] args) {
-        launch(args);
+        // Launch the JavaFX application
+        // This will create an instance of TapticFxApp and call its start() method
+        Application.launch(TapticFxApp.class, args);
     }
 }
