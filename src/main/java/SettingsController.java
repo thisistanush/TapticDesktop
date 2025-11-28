@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNullElse;
+
 public class SettingsController {
 
     @FXML private VBox broadcastSendBox;
@@ -134,6 +136,14 @@ public class SettingsController {
                     "Select which sounds from other devices this computer should react to (as if it heard them itself)."
             );
         }
+
+        // Fallback: if initWithLabels wasn't called explicitly, populate using Yamnet labels.
+        if (broadcastSendBox != null && broadcastListenBox != null && notificationColorBox != null
+                && broadcastSendBox.getChildren().isEmpty()
+                && broadcastListenBox.getChildren().isEmpty()
+                && notificationColorBox.getChildren().isEmpty()) {
+            initWithLabels(requireNonNullElse(YamnetMic.getLabels(), new String[0]));
+        }
     }
 
     public void initWithLabels(String[] allLabels) {
@@ -162,6 +172,25 @@ public class SettingsController {
 
             broadcastSendMap.clear();
             broadcastListenMap.clear();
+
+            if (interesting.isEmpty()) {
+                String placeholderText = "No labels available";
+
+                Label sendPlaceholder = new Label(placeholderText);
+                sendPlaceholder.getStyleClass().add("placeholder-label");
+                broadcastSendBox.getChildren().add(sendPlaceholder);
+
+                Label listenPlaceholder = new Label(placeholderText);
+                listenPlaceholder.getStyleClass().add("placeholder-label");
+                broadcastListenBox.getChildren().add(listenPlaceholder);
+
+                Label colorPlaceholder = new Label(placeholderText);
+                colorPlaceholder.getStyleClass().add("placeholder-label");
+                notificationColorBox.getChildren().add(colorPlaceholder);
+
+                emergencyLabelChoiceBox.getItems().clear();
+                return;
+            }
 
             for (String label : interesting) {
                 boolean emergencyDefault = AppConfig.isEmergencyHeuristic(label);
