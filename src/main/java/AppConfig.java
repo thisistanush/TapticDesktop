@@ -16,6 +16,7 @@ public final class AppConfig {
     public static volatile double notifyThreshold = 0.20;
     public static volatile String notificationSound = "System beep";
     public static volatile String emergencyNotificationSound = "Alarm pulse";
+    public static volatile String notificationEmoji = "🔵";
 
     // Broadcast label sets
     private static final List<String> broadcastSendLabels = new ArrayList<>();
