@@ -22,6 +22,10 @@ import javafx.util.Duration;
  */
 public final class NotificationPopup {
 
+    private static Popup activePopup;
+    private static PauseTransition activeDelay;
+    private static FadeTransition activeFadeOut;
+
     // Private constructor - this class only has static methods
     private NotificationPopup() {
     }
@@ -49,6 +53,9 @@ public final class NotificationPopup {
             System.err.println("NotificationPopup: Owner window is null, cannot show popup.");
             return;
         }
+
+        // Make sure any previous popup is cleared so notifications never overlap
+        hideActivePopup();
 
         // Create the main container
         HBox container = new HBox(10);
@@ -103,10 +110,20 @@ public final class NotificationPopup {
         popup.setAutoHide(true);
         popup.getContent().add(container);
 
+        activePopup = popup;
+
         // Position popup in top-right corner of owner window
         double x = owner.getX() + Math.max(20, owner.getWidth() - 320);
         double y = owner.getY() + 60;
         popup.show(owner, x, y);
+
+        popup.setOnHidden(event -> {
+            if (activePopup == popup) {
+                activePopup = null;
+                activeDelay = null;
+                activeFadeOut = null;
+            }
+        });
 
         // Fade in animation
         FadeTransition fadeIn = new FadeTransition(Duration.millis(180), container);
@@ -116,13 +133,37 @@ public final class NotificationPopup {
 
         // Auto-hide after 5 seconds with fade out
         PauseTransition delay = new PauseTransition(Duration.seconds(5));
+        activeDelay = delay;
         delay.setOnFinished(event -> {
             FadeTransition fadeOut = new FadeTransition(Duration.millis(180), container);
+            activeFadeOut = fadeOut;
             fadeOut.setFromValue(1);
             fadeOut.setToValue(0);
-            fadeOut.setOnFinished(fadeEvent -> popup.hide());
+            fadeOut.setOnFinished(fadeEvent -> {
+                popup.hide();
+                if (activePopup == popup) {
+                    activePopup = null;
+                    activeDelay = null;
+                    activeFadeOut = null;
+                }
+            });
             fadeOut.play();
         });
         delay.play();
+    }
+
+    private static void hideActivePopup() {
+        if (activeDelay != null) {
+            activeDelay.stop();
+            activeDelay = null;
+        }
+        if (activeFadeOut != null) {
+            activeFadeOut.stop();
+            activeFadeOut = null;
+        }
+        if (activePopup != null) {
+            activePopup.hide();
+            activePopup = null;
+        }
     }
 }
